@@ -8,6 +8,7 @@ import {
 } from '../../utils/api';
 import MainLayout from '../../components/Layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useToast } from '../../components/common/Toast';
 
 const STATUSES = ['todo', 'in_progress', 'in_review', 'done'];
 const STATUS_LABELS = {
@@ -38,6 +39,7 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useSelector((s) => s.auth);
   const navigate = useNavigate();
+  const showToast = useToast();
 
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -86,7 +88,7 @@ export default function ProjectDetail() {
         t.id === taskId ? { ...t, status: newStatus } : t
       ));
     } catch {
-      alert('Could not update task status.');
+      showToast('Could not update task status.', 'error');
     }
   };
 

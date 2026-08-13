@@ -5,7 +5,9 @@
   "main": "index.js",
 "scripts": {
   "start": "node server.js",
-  "dev": "nodemon server.js"
+  "dev": "nodemon server.js",
+  "migrate": "node scripts/runMigrations.js",
+  "test": "node tests/mcoEngine.test.js"
 },
   "keywords": [],
   "author": "",

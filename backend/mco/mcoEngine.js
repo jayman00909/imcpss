@@ -1,4 +1,33 @@
+function parseVector(vector) {
+  if (typeof vector === 'string') {
+    try {
+      const parsed = JSON.parse(vector);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return vector || {};
+}
+
+function normalizeWeights(weights = {}) {
+  const keys = ['w1', 'w2', 'w3', 'w4', 'w5'];
+  const defaults = { w1: 0.30, w2: 0.25, w3: 0.20, w4: 0.15, w5: 0.10 };
+  const raw = keys.map((k) => Number(weights[k] ?? defaults[k]) || 0);
+  const sum = raw.reduce((a, b) => a + b, 0);
+
+  if (sum <= 0) return { ...defaults };
+
+  const normalized = {};
+  keys.forEach((k, i) => {
+    normalized[k] = raw[i] / sum;
+  });
+  return normalized;
+}
+
 function cosineSimilarity(vectorA, vectorB) {
+  vectorA = parseVector(vectorA);
+  vectorB = parseVector(vectorB);
   const allSkills = new Set([
     ...Object.keys(vectorA),
     ...Object.keys(vectorB)
@@ -18,13 +47,7 @@ function cosineSimilarity(vectorA, vectorB) {
 }
 
 function runMCO(tasks, developers, weights, projectMeta) {
-  const {
-    w1 = 0.30,
-    w2 = 0.25,
-    w3 = 0.20,
-    w4 = 0.15,
-    w5 = 0.10
-  } = weights;
+  const { w1, w2, w3, w4, w5 } = normalizeWeights(weights);
 
   const today = new Date();
   const projectEnd = new Date(projectMeta.end_date);
@@ -91,4 +114,4 @@ function runMCO(tasks, developers, weights, projectMeta) {
   return [...active, ...blocked];
 }
 
-module.exports = { runMCO, cosineSimilarity };
+module.exports = { runMCO, cosineSimilarity, normalizeWeights };

@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { getMyProfile, updateMyProfile } from '../../utils/api';
 import MainLayout from '../../components/Layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useToast } from '../../components/common/Toast';
 
 const SKILL_OPTIONS = [
   { name: 'React', category: 'Frontend' },
@@ -30,6 +31,7 @@ const LEVEL_TEXT = ['', '#991b1b', '#92400e', '#065f46', '#1e40af', '#4c1d95'];
 
 export default function DeveloperProfile() {
   const { user } = useSelector(s => s.auth);
+  const showToast = useToast();
   const [skillVector, setSkillVector] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,7 +61,7 @@ export default function DeveloperProfile() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      alert('Could not save profile.');
+      showToast('Could not save profile.', 'error');
     } finally {
       setSaving(false);
     }

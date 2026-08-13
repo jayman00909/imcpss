@@ -75,6 +75,18 @@ export default function Navbar() {
                 <Link to="/profile" style={styles.link}>My Skills</Link>
               )}
 
+              {(user.role === 'manager' || user.role === 'admin') && (
+                <Link to="/developers" style={styles.link}>👥 Developers</Link>
+              )}
+
+              {user.role === 'admin' && (
+                <Link to="/admin" style={{
+                  ...styles.link,
+                  background: 'rgba(192,57,43,0.3)',
+                  border: '1px solid rgba(231,76,60,0.5)',
+                }}>⚙️ Admin Panel</Link>
+              )}
+
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout
               </button>
@@ -82,16 +94,6 @@ export default function Navbar() {
           )}
         </div>
       </nav>
-{user.role === 'developer' && (
-  <Link to="/profile" style={styles.link}>My Skills</Link>
-)}
-{user.role === 'admin' && (
-  <Link to="/admin" style={{
-    ...styles.link,
-    background: 'rgba(192,57,43,0.3)',
-    border: '1px solid rgba(231,76,60,0.5)',
-  }}>⚙️ Admin Panel</Link>
-)}
       {/* JWT Info Dropdown Panel */}
       {showToken && tokenInfo && (
         <div style={styles.tokenPanel}>

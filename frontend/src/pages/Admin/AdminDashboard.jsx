@@ -7,6 +7,7 @@ import {
 } from '../../utils/api';
 import MainLayout from '../../components/Layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useToast } from '../../components/common/Toast';
 
 const ROLE_COLORS = {
   admin: { bg: '#fdecea', color: '#c0392b' },
@@ -17,6 +18,7 @@ const ROLE_COLORS = {
 export default function AdminDashboard() {
   const { user } = useSelector(s => s.auth);
   const navigate = useNavigate();
+  const showToast = useToast();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
         u.id === userId ? { ...u, role: newRole } : u
       ));
     } catch {
-      alert('Could not update role.');
+      showToast('Could not update role.', 'error');
     }
   };
 
@@ -67,7 +69,7 @@ export default function AdminDashboard() {
       await adminDeleteUser(userId);
       setUsers(users.filter(u => u.id !== userId));
     } catch {
-      alert('Could not delete user.');
+      showToast('Could not delete user.', 'error');
     }
   };
 
@@ -77,7 +79,7 @@ export default function AdminDashboard() {
       await adminDeleteProject(projectId);
       setProjects(projects.filter(p => p.id !== projectId));
     } catch {
-      alert('Could not delete project.');
+      showToast('Could not delete project.', 'error');
     }
   };
 

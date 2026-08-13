@@ -3,7 +3,7 @@ import { store } from '../store/index';
 import { logout } from '../store/authSlice';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
 });
 
 // Automatically attach the JWT token to every request
@@ -58,6 +58,7 @@ export const generateSchedule = (projectId, weights) =>
 export const getMyProfile = () => api.get('/developers/profile');
 export const updateMyProfile = (data) => api.put('/developers/profile', data);
 export const getAllDevelopers = () => api.get('/developers');
+export const getDeveloperManagement = () => api.get('/developers/management');
 // Admin
 export const getAdminStats = () => api.get('/admin/stats');
 export const getAdminUsers = () => api.get('/admin/users');
