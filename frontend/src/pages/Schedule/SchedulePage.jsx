@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Icon from '../../components/common/Icon';
 export default function SchedulePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -88,13 +89,15 @@ export default function SchedulePage() {
   <div>
     <button
       onClick={() => navigate(`/projects/${id}`)}
-      style={styles.backButton}
+      style={{ ...styles.backButton, ...styles.inline }}
     >
-      ← Back to Project
+      <Icon name="arrowLeft" size={14} />
+      Back to Project
     </button>
 
-    <h1 style={styles.title}>
-      🧠 MCO Optimized Schedule
+    <h1 style={{ ...styles.title, ...styles.inline, gap: '10px' }}>
+      <Icon name="cpu" size={24} />
+      MCO Optimized Schedule
     </h1>
 
     <p style={styles.subtitle}>
@@ -107,11 +110,10 @@ export default function SchedulePage() {
   <button
     onClick={generateSchedule}
     disabled={generating}
-    style={styles.generateButton}
+    style={{ ...styles.generateButton, ...styles.inline }}
   >
-    {generating
-      ? 'Generating...'
-      : '🔄 Regenerate Schedule'}
+    {!generating && <Icon name="refresh" size={15} />}
+    {generating ? 'Generating...' : 'Regenerate Schedule'}
   </button>
 </div>
         {/* Error */}
@@ -133,14 +135,14 @@ export default function SchedulePage() {
             {/* Summary cards */}
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>📋</div>
+                <div style={styles.statIcon}><Icon name="clipboard" size={26} /></div>
                 <div>
                   <div style={styles.statLabel}>Scheduled Tasks</div>
                   <div style={styles.statValue}>{tasks.length}</div>
                 </div>
               </div>
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>⚡</div>
+                <div style={styles.statIcon}><Icon name="zap" size={26} /></div>
                 <div>
                   <div style={styles.statLabel}>Generation Time</div>
                   <div style={styles.statValue}>
@@ -149,7 +151,7 @@ export default function SchedulePage() {
                 </div>
               </div>
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>🎯</div>
+                <div style={styles.statIcon}><Icon name="target" size={26} /></div>
                 <div>
                   <div style={styles.statLabel}>Highest Priority</div>
                   <div style={styles.statValue}>
@@ -160,7 +162,7 @@ export default function SchedulePage() {
                 </div>
               </div>
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>🚧</div>
+                <div style={styles.statIcon}><Icon name="ban" size={26} /></div>
                 <div>
                   <div style={styles.statLabel}>Blocked Tasks</div>
                   <div style={styles.statValue}>
@@ -171,8 +173,9 @@ export default function SchedulePage() {
             </div>
             {/* Weights */}
             <div style={styles.panel}>
-              <h2 style={styles.sectionTitle}>
-                ⚖️ MCO Criteria Weights
+              <h2 style={{ ...styles.sectionTitle, ...styles.inline }}>
+                <Icon name="sliders" size={18} />
+                MCO Criteria Weights
               </h2>
               <div style={styles.weightsGrid}>
                 <Weight
@@ -201,8 +204,9 @@ export default function SchedulePage() {
             <div style={styles.panel}>
               <div style={styles.tableHeader}>
                 <div>
-                  <h2 style={styles.sectionTitle}>
-                    📊 Optimized Task Schedule
+                  <h2 style={{ ...styles.sectionTitle, ...styles.inline }}>
+                    <Icon name="barChart" size={18} />
+                    Optimized Task Schedule
                   </h2>
                   <p style={styles.tableDescription}>
                     Tasks are ranked from highest to lowest MCO
@@ -244,8 +248,9 @@ export default function SchedulePage() {
             </div>
             {/* Explanation */}
             <div style={styles.panel}>
-              <h2 style={styles.sectionTitle}>
-                🧠 How the MCO Score Works
+              <h2 style={{ ...styles.sectionTitle, ...styles.inline }}>
+                <Icon name="cpu" size={18} />
+                How the MCO Score Works
               </h2>
               <p style={styles.explanation}>
                 Each task receives a priority score based on five
@@ -316,10 +321,10 @@ function TaskRow({ task, index }) {
         )}
       </td>
       <td style={styles.td}>
-        📅 {deadline}
+        <span className="icon-text"><Icon name="calendar" size={13} />{deadline}</span>
       </td>
       <td style={styles.td}>
-        ⏱ {task.effort_hours}h
+        <span className="icon-text"><Icon name="clock" size={13} />{task.effort_hours}h</span>
       </td>
       <td style={styles.td}>
         <span style={styles.score}>
@@ -327,8 +332,9 @@ function TaskRow({ task, index }) {
         </span>
       </td>
       <td style={styles.td}>
-  <span style={styles.developerBadge}>
-    👤 {developer}
+  <span style={{ ...styles.developerBadge, ...styles.inline }}>
+    <Icon name="user" size={12} />
+    {developer}
   </span>
 </td>
       <td style={styles.td}>
@@ -338,12 +344,14 @@ function TaskRow({ task, index }) {
       </td>
       <td style={styles.td}>
         {task.is_blocked ? (
-          <span style={styles.blocked}>
-            🚧 Blocked
+          <span style={{ ...styles.blocked, ...styles.inline }}>
+            <Icon name="ban" size={13} />
+            Blocked
           </span>
         ) : (
-          <span style={styles.ready}>
-            ✓ Ready
+          <span style={{ ...styles.ready, ...styles.inline }}>
+            <Icon name="check" size={13} />
+            Ready
           </span>
         )}
       </td>
@@ -463,8 +471,11 @@ const styles = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
   },
   statIcon: {
-    fontSize: '28px'
+    color: '#2E5FA3',
+    display: 'flex'
   },
+  // Lines an icon up with its label.
+  inline: { display: 'inline-flex', alignItems: 'center', gap: '7px' },
   statLabel: {
     fontSize: '12px',
     color: '#777',

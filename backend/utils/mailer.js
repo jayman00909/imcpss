@@ -69,7 +69,7 @@ function passwordResetEmail({ fullName, resetUrl }) {
 
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a2e">
-      <p style="font-size:22px;font-weight:800;color:#2E5FA3;letter-spacing:2px;margin-bottom:24px">🗂 MCO</p>
+      <p style="font-size:22px;font-weight:800;color:#2E5FA3;letter-spacing:2px;margin-bottom:24px">MCO</p>
       <p style="font-size:16px;font-weight:600">Reset your password</p>
       <p style="font-size:14px;line-height:1.6;color:#4b5563">
         Hello ${fullName}, we received a request to reset your MCO password.

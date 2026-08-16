@@ -1,11 +1,12 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import Icon from './Icon';
 
 const ToastContext = createContext(null);
 
 const TYPE_STYLES = {
-  error: { bg: '#fdecea', border: '#f5c6cb', text: '#c0392b', icon: '⚠️' },
-  success: { bg: '#eafaf1', border: '#a3e4c1', text: '#1e7e45', icon: '✅' },
-  info: { bg: '#EBF5FB', border: '#bcd9f0', text: '#1A3A6B', icon: 'ℹ️' },
+  error: { bg: '#fdecea', border: '#f5c6cb', text: '#c0392b', icon: 'alertTriangle' },
+  success: { bg: '#eafaf1', border: '#a3e4c1', text: '#1e7e45', icon: 'checkCircle' },
+  info: { bg: '#EBF5FB', border: '#bcd9f0', text: '#1A3A6B', icon: 'info' },
 };
 
 let idCounter = 0;
@@ -42,7 +43,7 @@ export function ToastProvider({ children }) {
               style={{ ...styles.toast, background: s.bg, border: `1px solid ${s.border}`, color: s.text }}
               onClick={() => dismiss(t.id)}
             >
-              <span style={styles.icon}>{s.icon}</span>
+              <span style={styles.icon}><Icon name={s.icon} size={16} /></span>
               <span style={styles.message}>{t.message}</span>
               <button
                 style={{ ...styles.close, color: s.text }}
@@ -89,7 +90,7 @@ const styles = {
     cursor: 'pointer',
     animation: 'mco-toast-in 0.2s ease-out',
   },
-  icon: { fontSize: '16px', lineHeight: '20px' },
+  icon: { display: 'inline-flex', alignItems: 'center', height: '20px' },
   message: { flex: 1, lineHeight: '20px' },
   close: {
     background: 'none',

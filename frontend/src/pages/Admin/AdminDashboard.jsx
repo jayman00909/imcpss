@@ -8,6 +8,7 @@ import {
 import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
+import Icon from '../../components/common/Icon';
 
 const ROLE_COLORS = {
   admin: { bg: '#fdecea', color: '#c0392b' },
@@ -94,10 +95,16 @@ export default function AdminDashboard() {
       {/* Header */}
       <div style={s.header}>
         <div>
-          <h1 style={s.title}>⚙️ System Administration</h1>
+          <h1 style={{ ...s.title, ...s.inline }}>
+            <Icon name="settings" size={22} />
+            System Administration
+          </h1>
           <p style={s.sub}>Full system overview — MCO Admin Panel</p>
         </div>
-        <div style={s.adminBadge}>🔴 Admin Mode</div>
+        <div style={{ ...s.adminBadge, ...s.inline }}>
+          <Icon name="shield" size={14} />
+          Admin Mode
+        </div>
       </div>
 
       {error && <div style={s.error}>{error}</div>}
@@ -105,20 +112,24 @@ export default function AdminDashboard() {
       {/* Tab Navigation */}
       <div style={s.tabs}>
         {[
-          { key: 'overview', label: '📊 Overview' },
-          { key: 'users', label: `👥 All Users (${users.length})` },
-          { key: 'projects', label: `📋 All Projects (${projects.length})` },
+          { key: 'overview', icon: 'barChart', label: 'Overview' },
+          { key: 'users', icon: 'users', label: `All Users (${users.length})` },
+          { key: 'projects', icon: 'clipboard', label: `All Projects (${projects.length})` },
         ].map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             style={{
               ...s.tab,
+              ...s.inline,
               background: tab === t.key ? '#2E5FA3' : 'white',
               color: tab === t.key ? 'white' : '#555',
               borderColor: tab === t.key ? '#2E5FA3' : '#dee2e6',
             }}
-          >{t.label}</button>
+          >
+            <Icon name={t.icon} size={14} />
+            {t.label}
+          </button>
         ))}
       </div>
 
@@ -128,15 +139,17 @@ export default function AdminDashboard() {
           {/* Stat Cards */}
           <div style={s.statGrid}>
             {[
-              { label: 'Total Users', value: stats.total_users, icon: '👥', color: '#2E5FA3', bg: '#EBF5FB' },
-              { label: 'Managers', value: stats.total_managers, icon: '🎯', color: '#8e44ad', bg: '#f5eef8' },
-              { label: 'Developers', value: stats.total_developers, icon: '💻', color: '#27AE60', bg: '#e8f5e9' },
-              { label: 'Total Projects', value: stats.total_projects, icon: '📋', color: '#e67e22', bg: '#fef9e7' },
-              { label: 'Total Tasks', value: stats.total_tasks, icon: '✅', color: '#16a085', bg: '#e8f8f5' },
-              { label: 'Completion Rate', value: `${completionRate}%`, icon: '📈', color: '#c0392b', bg: '#fdecea' },
+              { label: 'Total Users', value: stats.total_users, icon: 'users', color: '#2E5FA3', bg: '#EBF5FB' },
+              { label: 'Managers', value: stats.total_managers, icon: 'clipboard', color: '#8e44ad', bg: '#f5eef8' },
+              { label: 'Developers', value: stats.total_developers, icon: 'code', color: '#27AE60', bg: '#e8f5e9' },
+              { label: 'Total Projects', value: stats.total_projects, icon: 'folder', color: '#e67e22', bg: '#fef9e7' },
+              { label: 'Total Tasks', value: stats.total_tasks, icon: 'checkCircle', color: '#16a085', bg: '#e8f8f5' },
+              { label: 'Completion Rate', value: `${completionRate}%`, icon: 'trendingUp', color: '#c0392b', bg: '#fdecea' },
             ].map(card => (
               <div key={card.label} style={{ ...s.statCard, background: card.bg }}>
-                <div style={s.statIcon}>{card.icon}</div>
+                <div style={{ ...s.statIcon, color: card.color }}>
+                  <Icon name={card.icon} size={24} />
+                </div>
                 <div style={{ ...s.statValue, color: card.color }}>{card.value}</div>
                 <div style={s.statLabel}>{card.label}</div>
               </div>
@@ -146,7 +159,7 @@ export default function AdminDashboard() {
           {/* Recent Activity */}
           <div style={s.twoCol}>
             <div style={s.card}>
-              <h3 style={s.cardTitle}>🕐 Recent Users</h3>
+              <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="clock" size={16} />Recent Users</h3>
               {stats.recentUsers?.map(u => (
                 <div key={u.id} style={s.recentRow}>
                   <div>
@@ -163,7 +176,7 @@ export default function AdminDashboard() {
             </div>
 
             <div style={s.card}>
-              <h3 style={s.cardTitle}>🕐 Recent Projects</h3>
+              <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="clock" size={16} />Recent Projects</h3>
               {stats.recentProjects?.map(p => (
                 <div key={p.id} style={s.recentRow}>
                   <div>
@@ -180,7 +193,7 @@ export default function AdminDashboard() {
 
           {/* System Health */}
           <div style={s.card}>
-            <h3 style={s.cardTitle}>🏥 System Health</h3>
+            <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="activity" size={16} />System Health</h3>
             <div style={s.healthGrid}>
               {[
                 { label: 'Database', status: 'Connected', ok: true },
@@ -210,7 +223,7 @@ export default function AdminDashboard() {
       {/* ── USERS TAB ────────────────────────────────────── */}
       {tab === 'users' && (
         <div style={s.card}>
-          <h3 style={s.cardTitle}>👥 All Registered Users</h3>
+          <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="users" size={16} />All Registered Users</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={s.table}>
               <thead>
@@ -257,7 +270,7 @@ export default function AdminDashboard() {
                           style={s.deleteBtn}
                           onClick={() => handleDeleteUser(u.id, u.full_name)}
                         >
-                          🗑 Delete
+                          <Icon name="trash" size={13} /> Delete
                         </button>
                       )}
                     </td>
@@ -272,7 +285,7 @@ export default function AdminDashboard() {
       {/* ── PROJECTS TAB ─────────────────────────────────── */}
       {tab === 'projects' && (
         <div style={s.card}>
-          <h3 style={s.cardTitle}>📋 All Projects in System</h3>
+          <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="clipboard" size={16} />All Projects in System</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={s.table}>
               <thead>
@@ -309,7 +322,7 @@ export default function AdminDashboard() {
                           style={s.deleteBtn}
                           onClick={() => handleDeleteProject(p.id, p.title)}
                         >
-                          🗑 Delete
+                          <Icon name="trash" size={13} /> Delete
                         </button>
                       </td>
                     </tr>
@@ -325,6 +338,7 @@ export default function AdminDashboard() {
 }
 
 const s = {
+  inline: { display: 'inline-flex', alignItems: 'center', gap: '7px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', color: '#1a1a2e' },
   sub: { color: '#6c757d', fontSize: '14px', marginTop: '4px' },
@@ -348,7 +362,7 @@ const s = {
     borderRadius: '12px', padding: '20px', textAlign: 'center',
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   },
-  statIcon: { fontSize: '28px', marginBottom: '8px' },
+  statIcon: { marginBottom: '10px', display: 'flex' },
   statValue: { fontSize: '32px', fontWeight: '800', marginBottom: '4px' },
   statLabel: { fontSize: '12px', color: '#6c757d', fontWeight: '600' },
   twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },

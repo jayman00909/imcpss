@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getProject, getProjectTasks } from '../../utils/api';
 import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Icon from '../../components/common/Icon';
 
 const STATUS_LABELS = {
   todo: 'To Do',
@@ -74,7 +75,7 @@ export default function ReportsPage() {
             style={styles.secondaryBtn}
             onClick={() => navigate(`/projects/${id}`)}
           >
-            ← Back to Project
+            <span className="icon-text"><Icon name="arrowLeft" size={14} />Back to Project</span>
           </button>
         </div>
       </MainLayout>
@@ -167,7 +168,7 @@ export default function ReportsPage() {
             style={styles.backBtn}
             onClick={() => navigate(`/projects/${id}`)}
           >
-            ← Back to Project
+            <span className="icon-text"><Icon name="arrowLeft" size={14} />Back to Project</span>
           </button>
 
           <h1 style={styles.title}>
@@ -209,7 +210,7 @@ export default function ReportsPage() {
         {/* Project progress */}
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>
-            📈 Project Progress
+            <Icon name="trendingUp" size={17} />Project Progress
           </h2>
 
           <div style={styles.progressTrack}>
@@ -229,7 +230,7 @@ export default function ReportsPage() {
         {/* Status breakdown */}
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>
-            📊 Task Status Breakdown
+            <Icon name="barChart" size={17} />Task Status Breakdown
           </h2>
 
           <div style={styles.statusGrid}>
@@ -289,7 +290,7 @@ export default function ReportsPage() {
         {/* Project metrics */}
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>
-            📋 Project Metrics
+            <Icon name="clipboard" size={17} />Project Metrics
           </h2>
 
           <div style={styles.metricsGrid}>
@@ -328,7 +329,7 @@ export default function ReportsPage() {
         {/* Developer workload */}
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>
-            👨‍💻 Developer Workload
+            <Icon name="users" size={17} />Developer Workload
           </h2>
 
           {workloadEntries.length === 0 ? (
@@ -378,7 +379,7 @@ export default function ReportsPage() {
         {/* Priority overview */}
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>
-            🎯 Task Priority Overview
+            <Icon name="target" size={17} />Task Priority Overview
           </h2>
 
           {tasks.length === 0 ? (
@@ -562,6 +563,9 @@ const styles = {
     margin: '0 0 20px',
     fontSize: '17px',
     color: '#1a1a2e',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '9px',
   },
 
   progressTrack: {

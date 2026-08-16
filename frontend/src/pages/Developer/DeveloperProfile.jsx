@@ -4,6 +4,7 @@ import { getMyProfile, updateMyProfile } from '../../utils/api';
 import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
+import Icon from '../../components/common/Icon';
 
 const SKILL_OPTIONS = [
   { name: 'React', category: 'Frontend' },
@@ -75,14 +76,20 @@ export default function DeveloperProfile() {
     <MainLayout>
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>🛠 My Skill Profile</h1>
+          <h1 style={{ ...styles.title, display: 'inline-flex', alignItems: 'center', gap: '9px' }}>
+            <Icon name="tool" size={20} />
+            My Skill Profile
+          </h1>
           <p style={styles.sub}>
             Hello {user?.full_name} — set your skill levels so the MCO engine can
             match you to the right tasks.
           </p>
         </div>
         <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : saved ? '✅ Saved!' : '💾 Save Profile'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+            {!saving && <Icon name={saved ? 'checkCircle' : 'save'} size={15} />}
+            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Profile'}
+          </span>
         </button>
       </div>
 
@@ -136,7 +143,9 @@ export default function DeveloperProfile() {
                         color: currentLevel === 0 ? '#333' : '#aaa',
                       }}
                       onClick={() => setSkillLevel(name, 0)}
-                    >✕ None</button>
+                    ><span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Icon name="x" size={12} />None
+                    </span></button>
                     {LEVELS.map(lv => (
                       <button
                         key={lv.value}
@@ -164,7 +173,10 @@ export default function DeveloperProfile() {
 
       {/* How it works */}
       <div style={styles.infoCard}>
-        <h3 style={styles.infoTitle}>💡 How Your Skills Are Used</h3>
+        <h3 style={{ ...styles.infoTitle, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <Icon name="lightbulb" size={16} />
+          How Your Skills Are Used
+        </h3>
         <p style={styles.infoText}>
           When a project manager generates an MCO schedule, the system computes
           the <strong>cosine similarity</strong> between your skill vector and each task's
@@ -176,7 +188,10 @@ export default function DeveloperProfile() {
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : saved ? '✅ Saved!' : '💾 Save Profile'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+            {!saving && <Icon name={saved ? 'checkCircle' : 'save'} size={15} />}
+            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Profile'}
+          </span>
         </button>
       </div>
     </MainLayout>

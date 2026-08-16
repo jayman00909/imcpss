@@ -2,6 +2,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { logout } from '../../store/authSlice';
+import Icon from '../common/Icon';
 
 export default function Navbar() {
   const { user, token } = useSelector((state) => state.auth);
@@ -35,7 +36,8 @@ export default function Navbar() {
       <nav style={styles.nav}>
         <div style={styles.left}>
           <Link to="/dashboard" style={styles.logo}>
-            🗂 MCO
+            <Icon name="logo" size={22} strokeWidth={1.9} />
+            MCO
           </Link>
         </div>
 
@@ -52,9 +54,7 @@ export default function Navbar() {
   }}
   title="Authentication status — click for details"
 >
-  <span style={{ fontSize: '10px' }}>
-    {tokenInfo?.valid ? '🔐' : '⚠️'}
-  </span>
+  <Icon name={tokenInfo?.valid ? 'shieldCheck' : 'alertTriangle'} size={12} />
   <span style={{
     fontSize: '10px', fontWeight: '600',
     color: tokenInfo?.valid ? '#a8f0c6' : '#f5b7b1',
@@ -65,26 +65,38 @@ export default function Navbar() {
 </button>
 
               <span style={styles.welcome}>
-                👋 {user.full_name}
-                <span style={styles.rolePill}>
-                  {user.role === 'manager' ? '🎯 Manager' : '💻 Developer'}
+                <Icon name="user" size={14} />
+                {user.full_name}
+                <span style={{ ...styles.rolePill, ...styles.pillInner }}>
+                  <Icon name={user.role === 'manager' ? 'clipboard' : 'code'} size={11} />
+                  {user.role === 'manager' ? 'Manager' : 'Developer'}
                 </span>
               </span>
 
               {user.role === 'developer' && (
-                <Link to="/profile" style={styles.link}>My Skills</Link>
+                <Link to="/profile" style={{ ...styles.link, ...styles.linkInner }}>
+                  <Icon name="tool" size={13} />
+                  My Skills
+                </Link>
               )}
 
               {(user.role === 'manager' || user.role === 'admin') && (
-                <Link to="/developers" style={styles.link}>👥 Developers</Link>
+                <Link to="/developers" style={{ ...styles.link, ...styles.linkInner }}>
+                  <Icon name="users" size={13} />
+                  Developers
+                </Link>
               )}
 
               {user.role === 'admin' && (
                 <Link to="/admin" style={{
                   ...styles.link,
+                  ...styles.linkInner,
                   background: 'rgba(192,57,43,0.3)',
                   border: '1px solid rgba(231,76,60,0.5)',
-                }}>⚙️ Admin Panel</Link>
+                }}>
+                  <Icon name="settings" size={13} />
+                  Admin Panel
+                </Link>
               )}
 
               <button onClick={handleLogout} style={styles.logoutBtn}>
@@ -99,8 +111,13 @@ export default function Navbar() {
         <div style={styles.tokenPanel}>
           <div style={styles.tokenPanelInner}>
             <div style={styles.tokenHeader}>
-              <h3 style={styles.tokenTitle}>🔐 JWT Authentication Details</h3>
-              <button onClick={() => setShowToken(false)} style={styles.closeBtn}>✕</button>
+              <h3 style={{ ...styles.tokenTitle, ...styles.pillInner }}>
+                <Icon name="lock" size={15} />
+                JWT Authentication Details
+              </h3>
+              <button onClick={() => setShowToken(false)} style={styles.closeBtn} aria-label="Close">
+                <Icon name="x" size={15} />
+              </button>
             </div>
 
             <div style={styles.tokenGrid}>
@@ -108,10 +125,12 @@ export default function Navbar() {
                 <span style={styles.tokenLabel}>Status</span>
                 <span style={{
                   ...styles.tokenValue,
+                  ...styles.pillInner,
                   color: tokenInfo.valid ? '#27AE60' : '#E74C3C',
                   fontWeight: '700',
                 }}>
-                  {tokenInfo.valid ? '✅ Valid & Active' : '❌ Expired'}
+                  <Icon name={tokenInfo.valid ? 'checkCircle' : 'xCircle'} size={14} />
+                  {tokenInfo.valid ? 'Valid & Active' : 'Expired'}
                 </span>
               </div>
               <div style={styles.tokenItem}>
@@ -177,7 +196,11 @@ const styles = {
   logo: {
     color: 'white', fontSize: '20px', fontWeight: '700',
     textDecoration: 'none', letterSpacing: '1px',
+    display: 'inline-flex', alignItems: 'center', gap: '8px',
   },
+  // Applied alongside link/pill styles to line an icon up with its label.
+  linkInner: { display: 'inline-flex', alignItems: 'center', gap: '6px' },
+  pillInner: { display: 'inline-flex', alignItems: 'center', gap: '5px' },
   right: { display: 'flex', alignItems: 'center', gap: '12px' },
   jwtBadge: {
     display: 'flex', alignItems: 'center', gap: '5px',

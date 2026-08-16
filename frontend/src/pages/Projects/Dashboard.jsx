@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { getProjects, createProject } from '../../utils/api';
 import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Icon from '../../components/common/Icon';
 
 export default function Dashboard() {
   const { user } = useSelector((state) => state.auth);
@@ -89,7 +90,7 @@ export default function Dashboard() {
             <h1 style={styles.title}>Project Dashboard</h1>
 
             <p style={styles.subtitle}>
-              Welcome back, {user?.full_name || 'User'} 👋
+              Welcome back, {user?.full_name || 'User'}
             </p>
 
             <p style={styles.description}>
@@ -100,10 +101,11 @@ export default function Dashboard() {
 
           {user?.role === 'manager' && (
             <button
-              style={styles.createButton}
+              style={{ ...styles.createButton, ...styles.btnInner }}
               onClick={() => setShowForm(!showForm)}
             >
-              {showForm ? '✕ Cancel' : '+ New Project'}
+              <Icon name={showForm ? 'x' : 'plus'} size={15} />
+              {showForm ? 'Cancel' : 'New Project'}
             </button>
           )}
         </div>
@@ -208,9 +210,10 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={creating}
-                style={styles.saveButton}
+                style={{ ...styles.saveButton, ...styles.btnInner }}
               >
-                {creating ? 'Creating...' : '✓ Create Project'}
+                {!creating && <Icon name="check" size={15} />}
+                {creating ? 'Creating...' : 'Create Project'}
               </button>
 
             </form>
@@ -221,7 +224,7 @@ export default function Dashboard() {
         <div style={styles.statsGrid}>
 
           <div style={styles.statCard}>
-            <div style={styles.statIcon}>📁</div>
+            <div style={styles.statIcon}><Icon name="folder" size={24} /></div>
             <div>
               <p style={styles.statLabel}>Total Projects</p>
               <h2 style={styles.statNumber}>
@@ -231,7 +234,7 @@ export default function Dashboard() {
           </div>
 
           <div style={styles.statCard}>
-            <div style={styles.statIcon}>📋</div>
+            <div style={styles.statIcon}><Icon name="clipboard" size={24} /></div>
             <div>
               <p style={styles.statLabel}>Total Tasks</p>
               <h2 style={styles.statNumber}>
@@ -245,7 +248,7 @@ export default function Dashboard() {
           </div>
 
           <div style={styles.statCard}>
-            <div style={styles.statIcon}>✅</div>
+            <div style={styles.statIcon}><Icon name="checkCircle" size={24} /></div>
             <div>
               <p style={styles.statLabel}>Completed Tasks</p>
               <h2 style={styles.statNumber}>
@@ -282,7 +285,7 @@ export default function Dashboard() {
 
           {projects.length === 0 ? (
             <div style={styles.empty}>
-              <div style={styles.emptyIcon}>📁</div>
+              <div style={styles.emptyIcon}><Icon name="folder" size={44} strokeWidth={1.4} /></div>
 
               <h3>No projects yet</h3>
 
@@ -319,7 +322,7 @@ export default function Dashboard() {
 
                     <div style={styles.cardTop}>
                       <div style={styles.folderIcon}>
-                        📁
+                        <Icon name="folder" size={22} />
                       </div>
 
                       <span style={styles.status}>
@@ -337,20 +340,16 @@ export default function Dashboard() {
                     </p>
 
                     <div style={styles.dateRow}>
-                      <span>
-                        📅{' '}
-                        {new Date(
-                          project.start_date
-                        ).toLocaleDateString()}
+                      <span className="icon-text">
+                        <Icon name="calendar" size={13} />
+                        {new Date(project.start_date).toLocaleDateString()}
                       </span>
 
-                      <span>→</span>
+                      <Icon name="arrowRight" size={13} />
 
-                      <span>
-                        🏁{' '}
-                        {new Date(
-                          project.end_date
-                        ).toLocaleDateString()}
+                      <span className="icon-text">
+                        <Icon name="flag" size={13} />
+                        {new Date(project.end_date).toLocaleDateString()}
                       </span>
                     </div>
 
@@ -369,23 +368,25 @@ export default function Dashboard() {
                     </div>
 
                     <div style={styles.taskInfo}>
-                      <span>
-                        📋 {totalTasks} Tasks
+                      <span className="icon-text">
+                        <Icon name="clipboard" size={13} />
+                        {totalTasks} Tasks
                       </span>
 
-                      <span>
-                        ✅ {completedTasks} Completed
+                      <span className="icon-text">
+                        <Icon name="checkCircle" size={13} />
+                        {completedTasks} Completed
                       </span>
                     </div>
 
                     <button
-                      style={styles.viewButton}
+                      style={{ ...styles.viewButton, ...styles.btnInner, justifyContent: 'center' }}
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/projects/${project.id}`);
                       }}
                     >
-                      Open Project →
+                      Open Project <Icon name="arrowRight" size={15} />
                     </button>
 
                   </div>
@@ -473,11 +474,13 @@ const styles = {
   },
 
   statIcon: {
-    fontSize: '28px',
+    color: '#2E5FA3',
     background: '#f0f4ff',
-    padding: '10px',
+    padding: '12px',
     borderRadius: '10px',
+    display: 'flex',
   },
+  btnInner: { display: 'inline-flex', alignItems: 'center', gap: '8px' },
 
   statLabel: {
     margin: 0,
@@ -546,7 +549,8 @@ const styles = {
   },
 
   folderIcon: {
-    fontSize: '25px',
+    color: '#2E5FA3',
+    display: 'flex',
   },
 
   status: {
@@ -576,7 +580,7 @@ const styles = {
     gap: '8px',
     alignItems: 'center',
     color: '#777',
-    fontSize: '11px',
+    fontSize: '11.5px',
     margin: '15px 0',
   },
 
@@ -630,8 +634,10 @@ const styles = {
   },
 
   emptyIcon: {
-    fontSize: '45px',
-    marginBottom: '10px',
+    color: '#c3cddd',
+    marginBottom: '14px',
+    display: 'flex',
+    justifyContent: 'center',
   },
 
   formCard: {

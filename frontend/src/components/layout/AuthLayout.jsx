@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Icon from '../common/Icon';
 
 /**
  * Shared shell for the Sign In and Create Account pages, so both stay
@@ -11,7 +12,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
     <div className="auth-page">
       <div className="auth-card">
         <Link to="/" className="auth-brand">
-          <span className="auth-brand-mark">🗂</span>
+          <span className="auth-brand-mark"><Icon name="logo" size={26} strokeWidth={1.9} /></span>
           <span className="auth-brand-name">MCO</span>
         </Link>
 

@@ -16,13 +16,20 @@ import {
 import MainLayout from '../../components/layout/MainLayout'; 
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
+import Icon from '../../components/common/Icon';
 
 const STATUSES = ['todo', 'in_progress', 'in_review', 'done'];
 const STATUS_LABELS = {
-  todo: '📋 To Do',
-  in_progress: '⚡ In Progress',
-  in_review: '🔍 In Review',
-  done: '✅ Done',
+  todo: 'To Do',
+  in_progress: 'In Progress',
+  in_review: 'In Review',
+  done: 'Done',
+};
+const STATUS_ICONS = {
+  todo: 'clipboard',
+  in_progress: 'zap',
+  in_review: 'search',
+  done: 'checkCircle',
 };
 const STATUS_COLORS = {
   todo: '#e3eaf5',
@@ -308,15 +315,22 @@ const handleEditTask = async (taskId) => {
       {/* Project Header */}
       <div style={styles.header}>
         <div>
-          <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>
-            ← Back to Projects
+          <button onClick={() => navigate('/dashboard')} style={{ ...styles.backBtn, ...styles.inline }}>
+            <Icon name="arrowLeft" size={14} />
+            Back to Projects
           </button>
           <h1 style={styles.title}>{project?.title}</h1>
           <p style={styles.desc}>{project?.description}</p>
-          <div style={styles.dates}>
-            <span>📅 {new Date(project?.start_date).toLocaleDateString()}</span>
-            <span style={{ margin: '0 8px' }}>→</span>
-            <span>🏁 {new Date(project?.end_date).toLocaleDateString()}</span>
+          <div style={{ ...styles.dates, ...styles.inline, gap: '10px' }}>
+            <span className="icon-text">
+              <Icon name="calendar" size={13} />
+              {new Date(project?.start_date).toLocaleDateString()}
+            </span>
+            <Icon name="arrowRight" size={13} />
+            <span className="icon-text">
+              <Icon name="flag" size={13} />
+              {new Date(project?.end_date).toLocaleDateString()}
+            </span>
           </div>
         </div>
         <div style={styles.headerRight}>
@@ -335,31 +349,39 @@ const handleEditTask = async (taskId) => {
       <div style={styles.actionBar}>
         {isManager && (
           <>
-            <button style={styles.primaryBtn} onClick={() => setShowTaskForm(!showTaskForm)}>
-              {showTaskForm ? '✕ Cancel' : '+ Add Task'}
+            <button
+              style={{ ...styles.primaryBtn, ...styles.inline }}
+              onClick={() => setShowTaskForm(!showTaskForm)}
+            >
+              <Icon name={showTaskForm ? 'x' : 'plus'} size={15} />
+              {showTaskForm ? 'Cancel' : 'Add Task'}
             </button>
            <button
   type="button"
-  style={{ ...styles.secondaryBtn, position: 'relative', zIndex: 10 }}
+  style={{ ...styles.secondaryBtn, ...styles.inline, position: 'relative', zIndex: 10 }}
   onClick={() => setShowMemberPanel(prev => !prev)}
 >
-  👥 Manage Team ({members.length})
+  <Icon name="users" size={15} />
+  Manage Team ({members.length})
 </button>
           </>
         )}
         <button
-          style={styles.scheduleBtn}
+          style={{ ...styles.scheduleBtn, ...styles.inline }}
           onClick={() => navigate(`/projects/${id}/schedule`)}
         >
-          🧠 Generate MCO Schedule →
+          <Icon name="cpu" size={15} />
+          Generate MCO Schedule
+          <Icon name="arrowRight" size={15} />
         </button>
        <button
   type="button"
-  style={styles.reportBtn}
+  style={{ ...styles.reportBtn, ...styles.inline }}
   onClick={() => navigate(`/projects/${id}/reports`)}
 >
-  📊 Reports & Analytics
-</button> 
+  <Icon name="barChart" size={15} />
+  Reports &amp; Analytics
+</button>
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
@@ -367,15 +389,19 @@ const handleEditTask = async (taskId) => {
       {/* Team Member Panel */}
       {showMemberPanel && (
         <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>👥 Project Team</h3>
+          <h3 style={{ ...styles.panelTitle, ...styles.inline }}>
+            <Icon name="users" size={16} />
+            Project Team
+          </h3>
           <div style={styles.memberGrid}>
             <div>
               <p style={styles.panelSubtitle}>Current Members</p>
               {members.length === 0
                 ? <p style={styles.muted}>No members yet.</p>
                 : members.map(m => (
-                  <div key={m.id} style={styles.memberTag}>
-                    👤 {m.full_name} — <span style={styles.roleLabel}>{m.role}</span>
+                  <div key={m.id} style={{ ...styles.memberTag, ...styles.inline }}>
+                    <Icon name="user" size={13} />
+                    {m.full_name} — <span style={styles.roleLabel}>{m.role}</span>
                   </div>
                 ))
               }
@@ -386,9 +412,16 @@ const handleEditTask = async (taskId) => {
                 .filter(d => !members.find(m => m.id === d.id))
                 .map(d => (
                   <div key={d.id} style={styles.devRow}>
-                    <span>👤 {d.full_name}</span>
-                    <button style={styles.addMemberBtn} onClick={() => handleAddMember(d.id)}>
-                      + Add
+                    <span className="icon-text">
+                      <Icon name="user" size={13} />
+                      {d.full_name}
+                    </span>
+                    <button
+                      style={{ ...styles.addMemberBtn, ...styles.inline }}
+                      onClick={() => handleAddMember(d.id)}
+                    >
+                      <Icon name="userPlus" size={13} />
+                      Add
                     </button>
                   </div>
                 ))
@@ -404,7 +437,10 @@ const handleEditTask = async (taskId) => {
       {/* Task Creation Form */}
       {showTaskForm && isManager && ( 
         <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>➕ Create New Task</h3>
+          <h3 style={{ ...styles.panelTitle, ...styles.inline }}>
+            <Icon name="plus" size={16} />
+            Create New Task
+          </h3>
           <form onSubmit={handleCreateTask}>
             <div style={styles.formGrid}>
               <div style={styles.field}>
@@ -466,8 +502,9 @@ const handleEditTask = async (taskId) => {
                 ))}
               </div>
             </div>
-            <button type="submit" style={styles.primaryBtn} disabled={saving}>
-              {saving ? 'Creating...' : '✓ Create Task'}
+            <button type="submit" style={{ ...styles.primaryBtn, ...styles.inline }} disabled={saving}>
+              {!saving && <Icon name="check" size={15} />}
+              {saving ? 'Creating...' : 'Create Task'}
             </button>
           </form>
         </div>
@@ -478,7 +515,10 @@ const handleEditTask = async (taskId) => {
         {STATUSES.map(status => (
           <div key={status} style={{ ...styles.column, background: STATUS_COLORS[status] }}>
             <div style={styles.columnHeader}>
-              <span style={styles.columnTitle}>{STATUS_LABELS[status]}</span>
+              <span style={{ ...styles.columnTitle, ...styles.inline }}>
+                <Icon name={STATUS_ICONS[status]} size={14} />
+                {STATUS_LABELS[status]}
+              </span>
               <span style={styles.columnCount}>{getTasksByStatus(status).length}</span>
             </div>
 
@@ -541,8 +581,9 @@ const handleEditTask = async (taskId) => {
       type="button"
       style={styles.deleteTaskBtn}
       onClick={() => handleDeleteTask(task.id)}
+      aria-label="Delete task"
     >
-      ✕
+      <Icon name="trash" size={14} />
     </button>
   </>
 )}
@@ -553,13 +594,18 @@ const handleEditTask = async (taskId) => {
                   )}
 
                   <div style={styles.taskMeta}>
-                    <span style={styles.metaItem}>
-                      📅 {new Date(task.deadline).toLocaleDateString()}
+                    <span style={{ ...styles.metaItem, ...styles.inline }}>
+                      <Icon name="calendar" size={11} />
+                      {new Date(task.deadline).toLocaleDateString()}
                     </span>
-                    <span style={styles.metaItem}>⏱ {task.effort_hours}h</span>
+                    <span style={{ ...styles.metaItem, ...styles.inline }}>
+                      <Icon name="clock" size={11} />
+                      {task.effort_hours}h
+                    </span>
                     {task.priority_score > 0 && (
-                      <span style={styles.scoreTag}>
-                        🎯 {parseFloat(task.priority_score).toFixed(3)}
+                      <span style={{ ...styles.scoreTag, ...styles.inline }}>
+                        <Icon name="target" size={11} />
+                        {parseFloat(task.priority_score).toFixed(3)}
                       </span>
                     )}
                   </div>
@@ -691,6 +737,8 @@ const styles = {
   progressBarFill: { background: '#2E5FA3', borderRadius: '10px', height: '8px', transition: 'width 0.4s' },
   progressSub: { fontSize: '11px', color: '#888' },
   actionBar: { display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' },
+  // Lines an icon up with its label inside buttons, headings and tags.
+  inline: { display: 'inline-flex', alignItems: 'center', gap: '7px' },
   primaryBtn: {
     background: '#2E5FA3', color: 'white', border: 'none',
     padding: '10px 20px', borderRadius: '8px', cursor: 'pointer',
@@ -794,8 +842,9 @@ const styles = {
   marginRight: '6px'
 },
   deleteTaskBtn: {
-    background: 'none', border: 'none', color: '#ccc',
-    cursor: 'pointer', fontSize: '14px', padding: '0 0 0 6px',
+    background: 'none', border: 'none', color: '#c0392b',
+    cursor: 'pointer', padding: '4px', display: 'inline-flex',
+    alignItems: 'center', opacity: 0.65,
   },
   taskDesc: { fontSize: '12px', color: '#888', marginBottom: '8px', lineHeight: '1.5' },
   taskMeta: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' },

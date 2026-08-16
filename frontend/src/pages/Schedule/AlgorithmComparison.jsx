@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
+import Icon from '../../components/common/Icon';
 
 // Placeholder: no navigation currently links here. Kept so the /compare route
 // resolves instead of falling through to the catch-all redirect.
@@ -13,9 +14,10 @@ export default function AlgorithmComparison() {
       <div style={styles.panel}>
         <button
           onClick={() => navigate(`/projects/${id}`)}
-          style={styles.backButton}
+          style={{ ...styles.backButton, display: 'inline-flex', alignItems: 'center', gap: '7px' }}
         >
-          ← Back to Project
+          <Icon name="arrowLeft" size={14} />
+          Back to Project
         </button>
 
         <h1 style={styles.title}>Algorithm Comparison</h1>
@@ -27,9 +29,10 @@ export default function AlgorithmComparison() {
 
         <button
           onClick={() => navigate(`/projects/${id}/schedule`)}
-          style={styles.primaryButton}
+          style={{ ...styles.primaryButton, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
         >
-          View the MCO Schedule →
+          View the MCO Schedule
+          <Icon name="arrowRight" size={15} />
         </button>
       </div>
     </MainLayout>

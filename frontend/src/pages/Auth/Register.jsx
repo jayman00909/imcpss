@@ -4,18 +4,19 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../store/authSlice';
 import { registerUser } from '../../utils/api';
 import AuthLayout from '../../components/layout/AuthLayout';
+import Icon from '../../components/common/Icon';
 
 // Must match the roles the database CHECK constraint accepts.
 const ROLES = [
   {
     value: 'manager',
-    icon: '🎯',
+    icon: 'clipboard',
     name: 'Manager',
     description: 'Create projects, add tasks and generate schedules.',
   },
   {
     value: 'developer',
-    icon: '💻',
+    icon: 'code',
     name: 'Developer',
     description: 'Track assigned work and maintain your skill profile.',
   },
@@ -161,7 +162,7 @@ export default function Register() {
                 aria-pressed={form.role === role.value}
                 onClick={() => setForm((prev) => ({ ...prev, role: role.value }))}
               >
-                <span className="auth-role-icon">{role.icon}</span>
+                <span className="auth-role-icon"><Icon name={role.icon} size={19} /></span>
                 <span className="auth-role-name">{role.name}</span>
                 <span className="auth-role-desc">{role.description}</span>
               </button>

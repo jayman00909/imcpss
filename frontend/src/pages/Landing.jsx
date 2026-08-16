@@ -1,28 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Icon from '../components/common/Icon';
 
 const CRITERIA = [
-  { icon: '⏰', name: 'Deadline Urgency', weight: '30%', desc: 'How close a task is to its due date.' },
-  { icon: '🎯', name: 'Skill Match', weight: '25%', desc: 'Cosine-similarity match between task needs and developer skills.' },
-  { icon: '🔗', name: 'Dependency Readiness', weight: '20%', desc: 'Whether prerequisite tasks are already done.' },
-  { icon: '💎', name: 'Business Value', weight: '15%', desc: 'How important the task is to the project goals.' },
-  { icon: '⚡', name: 'Effort Efficiency', weight: '10%', desc: 'Value delivered relative to effort required.' },
+  { icon: 'clock', name: 'Deadline Urgency', weight: '30%', desc: 'How close a task is to its due date.' },
+  { icon: 'target', name: 'Skill Match', weight: '25%', desc: 'Cosine-similarity match between task needs and developer skills.' },
+  { icon: 'link', name: 'Dependency Readiness', weight: '20%', desc: 'Whether prerequisite tasks are already done.' },
+  { icon: 'award', name: 'Business Value', weight: '15%', desc: 'How important the task is to the project goals.' },
+  { icon: 'zap', name: 'Effort Efficiency', weight: '10%', desc: 'Value delivered relative to effort required.' },
 ];
 
 const FEATURES = [
-  { icon: '🧠', title: 'MCO Priority Engine', desc: 'Every task is automatically scored with a Weighted Sum Model across five criteria — no more guessing what to work on first.' },
-  { icon: '👤', title: 'Smart Developer Matching', desc: 'Tasks are matched to the best-fit developer using cosine similarity between required and available skills.' },
-  { icon: '🔗', title: 'Dependency-Aware Scheduling', desc: 'Tasks whose prerequisites aren’t finished are automatically held back, so schedules stay realistic.' },
-  { icon: '📋', title: 'Kanban Board', desc: 'Track tasks through To Do, In Progress, In Review, and Done with live priority scores on every card.' },
-  { icon: '📊', title: 'Gantt & Schedule Views', desc: 'Visualize the generated project timeline and compare scheduling approaches side by side.' },
-  { icon: '🔒', title: 'Role-Based Access', desc: 'JWT authentication with manager, developer, and admin roles keep the right people in the right views.' },
+  { icon: 'cpu', title: 'MCO Priority Engine', desc: 'Every task is automatically scored with a Weighted Sum Model across five criteria — no more guessing what to work on first.' },
+  { icon: 'users', title: 'Smart Developer Matching', desc: 'Tasks are matched to the best-fit developer using cosine similarity between required and available skills.' },
+  { icon: 'link', title: 'Dependency-Aware Scheduling', desc: 'Tasks whose prerequisites aren’t finished are automatically held back, so schedules stay realistic.' },
+  { icon: 'clipboard', title: 'Kanban Board', desc: 'Track tasks through To Do, In Progress, In Review, and Done with live priority scores on every card.' },
+  { icon: 'barChart', title: 'Gantt & Schedule Views', desc: 'Visualize the generated project timeline and compare scheduling approaches side by side.' },
+  { icon: 'lock', title: 'Role-Based Access', desc: 'JWT authentication with manager, developer, and admin roles keep the right people in the right views.' },
 ];
 
 export default function Landing() {
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <div style={styles.logo}>🗂 MCO</div>
+        <div style={styles.logo}><Icon name="logo" size={22} strokeWidth={1.9} />MCO</div>
         <div style={styles.navLinks}>
           <Link to="/login" style={styles.navLink}>Sign In</Link>
           <Link to="/register" style={styles.navCta}>Get Started</Link>
@@ -37,7 +38,9 @@ export default function Landing() {
           and effort — then recommends the order to work in and who should do it.
         </p>
         <div style={styles.heroCtas}>
-          <Link to="/register" style={styles.primaryBtn}>Create Free Account →</Link>
+          <Link to="/register" style={{ ...styles.primaryBtn, ...styles.btnInner }}>
+            Create Free Account <Icon name="arrowRight" size={16} />
+          </Link>
           <Link to="/login" style={styles.secondaryBtn}>Sign In</Link>
         </div>
       </header>
@@ -50,7 +53,7 @@ export default function Landing() {
         <div style={styles.criteriaGrid}>
           {CRITERIA.map((c) => (
             <div key={c.name} style={styles.criteriaCard}>
-              <div style={styles.criteriaIcon}>{c.icon}</div>
+              <div style={styles.criteriaIcon}><Icon name={c.icon} size={26} strokeWidth={1.6} /></div>
               <div style={styles.criteriaWeight}>{c.weight}</div>
               <div style={styles.criteriaName}>{c.name}</div>
               <p style={styles.criteriaDesc}>{c.desc}</p>
@@ -64,7 +67,7 @@ export default function Landing() {
         <div style={styles.featureGrid}>
           {FEATURES.map((f) => (
             <div key={f.title} style={styles.featureCard}>
-              <div style={styles.featureIcon}>{f.icon}</div>
+              <div style={styles.featureIcon}><Icon name={f.icon} size={24} strokeWidth={1.6} /></div>
               <h3 style={styles.featureTitle}>{f.title}</h3>
               <p style={styles.featureDesc}>{f.desc}</p>
             </div>
@@ -75,11 +78,16 @@ export default function Landing() {
       <section style={styles.ctaSection}>
         <h2 style={styles.ctaTitle}>Ready to schedule smarter?</h2>
         <p style={styles.ctaSub}>Set up your first project in minutes.</p>
-        <Link to="/register" style={styles.primaryBtnLight}>Create Free Account →</Link>
+        <Link to="/register" style={{ ...styles.primaryBtnLight, ...styles.btnInner }}>
+          Create Free Account <Icon name="arrowRight" size={16} />
+        </Link>
       </section>
 
       <footer style={styles.footer}>
-        <p>🗂 MCO — Multi-Criteria Optimization Project Scheduling System</p>
+        <p style={styles.footerInner}>
+          <Icon name="logo" size={15} />
+          MCO — Multi-Criteria Optimization Project Scheduling System
+        </p>
       </footer>
     </div>
   );
@@ -92,7 +100,10 @@ const styles = {
     padding: '20px 40px', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     position: 'sticky', top: 0, zIndex: 10,
   },
-  logo: { fontSize: '20px', fontWeight: '800', color: '#2E5FA3' },
+  logo: {
+    fontSize: '20px', fontWeight: '800', color: '#2E5FA3',
+    display: 'inline-flex', alignItems: 'center', gap: '8px', letterSpacing: '1px',
+  },
   navLinks: { display: 'flex', alignItems: 'center', gap: '20px' },
   navLink: { color: '#1a1a2e', textDecoration: 'none', fontWeight: '600', fontSize: '14px' },
   navCta: {
@@ -110,6 +121,7 @@ const styles = {
   heroTitle: { fontSize: '40px', fontWeight: '800', maxWidth: '760px', margin: '0 auto 18px', lineHeight: '1.25' },
   heroSub: { fontSize: '16px', maxWidth: '620px', margin: '0 auto 32px', opacity: 0.9, lineHeight: '1.6' },
   heroCtas: { display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' },
+  btnInner: { display: 'inline-flex', alignItems: 'center', gap: '8px' },
   primaryBtn: {
     background: 'white', color: '#2E5FA3', padding: '14px 28px', borderRadius: '10px',
     textDecoration: 'none', fontWeight: '700', fontSize: '15px',
@@ -129,7 +141,10 @@ const styles = {
     background: 'white', borderRadius: '14px', padding: '24px 18px', textAlign: 'center',
     boxShadow: '0 2px 10px rgba(0,0,0,0.06)', border: '1px solid #eef1f6',
   },
-  criteriaIcon: { fontSize: '28px', marginBottom: '8px' },
+  criteriaIcon: {
+    marginBottom: '10px', color: '#2E5FA3',
+    display: 'flex', justifyContent: 'center',
+  },
   criteriaWeight: { fontSize: '22px', fontWeight: '800', color: '#2E5FA3', marginBottom: '4px' },
   criteriaName: { fontSize: '14px', fontWeight: '700', marginBottom: '8px' },
   criteriaDesc: { fontSize: '12.5px', color: '#6c757d', lineHeight: '1.5' },
@@ -138,7 +153,7 @@ const styles = {
     background: 'white', borderRadius: '14px', padding: '26px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.06)', border: '1px solid #eef1f6',
   },
-  featureIcon: { fontSize: '26px', marginBottom: '10px' },
+  featureIcon: { marginBottom: '12px', color: '#2E5FA3', display: 'flex' },
   featureTitle: { fontSize: '16px', fontWeight: '700', marginBottom: '8px' },
   featureDesc: { fontSize: '13.5px', color: '#6c757d', lineHeight: '1.6' },
   ctaSection: { textAlign: 'center', padding: '80px 20px', background: '#1A3A6B', color: 'white' },
@@ -149,4 +164,5 @@ const styles = {
     textDecoration: 'none', fontWeight: '700', fontSize: '15px', display: 'inline-block',
   },
   footer: { textAlign: 'center', padding: '24px', color: '#6c757d', fontSize: '13px', background: '#f8faff' },
+  footerInner: { display: 'inline-flex', alignItems: 'center', gap: '8px' },
 };
