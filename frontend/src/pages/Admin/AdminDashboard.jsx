@@ -5,7 +5,7 @@ import {
   getAdminStats, getAdminUsers, getAdminProjects,
   updateUserRole, adminDeleteUser, adminDeleteProject
 } from '../../utils/api';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
 

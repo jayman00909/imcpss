@@ -1,4 +1,4 @@
- import React, { useEffect, useState } from 'react';
+ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
@@ -45,7 +45,12 @@ const SKILL_OPTIONS = [
 export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useSelector((s) => s.auth);
-  const currentUser = user || JSON.parse(localStorage.getItem('imcpss_user') || 'null');
+  // The auth slice rehydrates `user` from localStorage on boot, so Redux is the
+  // single source of truth for identity and role across this component.
+  const isManager = useMemo(
+    () => user?.role === 'manager' || user?.role === 'admin',
+    [user]
+  );
   const navigate = useNavigate();
   const showToast = useToast();
 
@@ -76,11 +81,11 @@ const [editTitle, setEditTitle] = useState('');
       setProject(projRes.data);
       setTasks(tasksRes.data);
       setMembers(membersRes.data);
-        if (currentUser?.role === 'manager') {
-  const devRes = await getAllDevelopers();
-  console.log('DEVELOPERS LOADED:', devRes.data);
-  setAllDevs(devRes.data);
-}
+
+      if (isManager) {
+        const devRes = await getAllDevelopers();
+        setAllDevs(devRes.data);
+      }
     } catch {
       setError('Could not load project.');
     } finally {
@@ -88,7 +93,7 @@ const [editTitle, setEditTitle] = useState('');
     }
   };
 
-  useEffect(() => { fetchAll(); }, [id]);
+  useEffect(() => { fetchAll(); }, [id, isManager]);
 
   const getTasksByStatus = (status) =>
     tasks.filter(t => t.status === status);
@@ -220,8 +225,17 @@ const handleAddDependency = async (taskId, dependsOnId) => {
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Delete this task?')) return;
-    await deleteTask(taskId);
-    setTasks(tasks.filter(t => t.id !== taskId));
+
+    try {
+      await deleteTask(taskId);
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      showToast('Task deleted successfully.', 'success');
+    } catch (err) {
+      showToast(
+        err.response?.data?.error || 'Could not delete task.',
+        'error'
+      );
+    }
   };
 
 const handleEditTask = async (taskId) => {
@@ -262,8 +276,16 @@ const handleEditTask = async (taskId) => {
 };  
 
   const handleAddMember = async (userId) => {
-    await addProjectMember(id, { user_id: userId });
-    fetchAll();
+    try {
+      await addProjectMember(id, { user_id: userId });
+      await fetchAll();
+      showToast('Developer added to the project.', 'success');
+    } catch (err) {
+      showToast(
+        err.response?.data?.error || 'Could not add developer to the project.',
+        'error'
+      );
+    }
   };
 
   const toggleSkill = (skill) => {
@@ -311,7 +333,7 @@ const handleEditTask = async (taskId) => {
 
       {/* Action Buttons */}
       <div style={styles.actionBar}>
-        {currentUser?.role === 'manager' && (
+        {isManager && (
           <>
             <button style={styles.primaryBtn} onClick={() => setShowTaskForm(!showTaskForm)}>
               {showTaskForm ? '✕ Cancel' : '+ Add Task'}
@@ -319,10 +341,7 @@ const handleEditTask = async (taskId) => {
            <button
   type="button"
   style={{ ...styles.secondaryBtn, position: 'relative', zIndex: 10 }}
-  onClick={() => {
-    console.log('Manage Team clicked');
-    setShowMemberPanel(prev => !prev);
-  }}
+  onClick={() => setShowMemberPanel(prev => !prev)}
 >
   👥 Manage Team ({members.length})
 </button>
@@ -383,7 +402,7 @@ const handleEditTask = async (taskId) => {
       )}
 
       {/* Task Creation Form */}
-      {showTaskForm && currentUser?.role === 'manager' && ( 
+      {showTaskForm && isManager && ( 
         <div style={styles.panel}>
           <h3 style={styles.panelTitle}>➕ Create New Task</h3>
           <form onSubmit={handleCreateTask}>
@@ -505,7 +524,7 @@ const handleEditTask = async (taskId) => {
  <p style={styles.taskTitle}>{task.title}</p>
 )}
 
-{currentUser?.role === 'manager' && (
+{isManager && (
   <>
     <button
       type="button"
@@ -554,7 +573,7 @@ const handleEditTask = async (taskId) => {
                     </div>
                   )}
                  
-              {currentUser?.role === 'manager' && (
+              {isManager && (
   <div style={{ marginBottom: '10px' }}>
     <label style={{
       display: 'block',

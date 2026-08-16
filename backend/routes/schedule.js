@@ -1,14 +1,21 @@
  const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const verifyToken = require('../middleware/auth');
-const { runMCO, normalizeWeights } = require('../mco/mcoEngine'); 
+const { verifyToken, requireRole } = require('../middleware/auth');
+const { runMCO, normalizeWeights } = require('../mco/mcoEngine');
+const {
+  checkProjectAccess,
+  denyAccess,
+} = require('../middleware/projectAccess');
 
 // Generate MCO schedule for a project
-router.post('/generate/:projectId', verifyToken, async (req, res) => {
+router.post('/generate/:projectId', verifyToken, requireRole('manager', 'admin'), async (req, res) => {
   try {
     const { projectId } = req.params;
     const { weights } = req.body || {};
+
+    const access = await checkProjectAccess(req.user, projectId);
+    if (!access.canManage) return denyAccess(res, access);
 
     // Get project
     const projectResult = await pool.query(
@@ -166,6 +173,9 @@ const schedule = runMCO(
 // Get latest saved schedule for a project
 router.get('/:projectId', verifyToken, async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.projectId);
+    if (!access.canView) return denyAccess(res, access);
+
     const result = await pool.query(
       `
       SELECT

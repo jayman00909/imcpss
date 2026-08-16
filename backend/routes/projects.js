@@ -1,8 +1,17 @@
  const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  checkProjectAccess,
+  denyAccess,
+} = require('../middleware/projectAccess');
 
-// GET all projects
+// Every project endpoint requires a valid token.
+router.use(verifyToken);
+
+// GET projects visible to the current user.
+// Admins see everything; everyone else sees projects they manage or belong to.
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -20,9 +29,16 @@ router.get('/', async (req, res) => {
       FROM projects p
       LEFT JOIN users u ON u.id = p.manager_id
       LEFT JOIN tasks t ON t.project_id = p.id
+      WHERE
+        $2 = 'admin'
+        OR p.manager_id = $1
+        OR EXISTS (
+          SELECT 1 FROM project_members pm
+          WHERE pm.project_id = p.id AND pm.user_id = $1
+        )
       GROUP BY p.id, u.full_name
       ORDER BY p.created_at DESC
-    `);
+    `, [req.user.id, req.user.role]);
 
     res.json(result.rows);
   } catch (error) {
@@ -36,6 +52,9 @@ router.get('/', async (req, res) => {
 // GET single project
 router.get('/:id', async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.id);
+    if (!access.canView) return denyAccess(res, access);
+
     const result = await pool.query(`
       SELECT
         p.id,
@@ -67,19 +86,23 @@ router.get('/:id', async (req, res) => {
 });
 
 // CREATE project
-router.post('/', async (req, res) => {
+router.post('/', requireRole('manager', 'admin'), async (req, res) => {
   try {
     const {
       title,
       description,
       start_date,
-      end_date,
-      manager_id
+      end_date
     } = req.body;
 
-    if (!title || !start_date || !end_date || !manager_id) {
+    // The owning manager is taken from the verified token, never from the
+    // request body — a client must not be able to create a project for
+    // someone else.
+    const manager_id = req.user.id;
+
+    if (!title || !start_date || !end_date) {
       return res.status(400).json({
-        error: 'Title, start date, end date and manager ID are required.'
+        error: 'Title, start date and end date are required.'
       });
     }
 
@@ -107,8 +130,11 @@ router.post('/', async (req, res) => {
 });
 
 // UPDATE project
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('manager', 'admin'), async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access);
+
     const {
       title,
       description,
@@ -149,8 +175,11 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE project
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('manager', 'admin'), async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access);
+
     const result = await pool.query(
       'DELETE FROM projects WHERE id = $1 RETURNING id',
       [req.params.id]
@@ -175,6 +204,9 @@ router.delete('/:id', async (req, res) => {
 // GET project members
 router.get('/:id/members', async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.id);
+    if (!access.canView) return denyAccess(res, access);
+
     const result = await pool.query(`
       SELECT
         u.id,
@@ -197,8 +229,11 @@ router.get('/:id/members', async (req, res) => {
 });
 
 // ADD project member
-router.post('/:id/members', async (req, res) => {
+router.post('/:id/members', requireRole('manager', 'admin'), async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access);
+
     const { user_id } = req.body;
 
     if (!user_id) {

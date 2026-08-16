@@ -2,11 +2,29 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const rateLimit = require('../middleware/rateLimit');
 
 const router = express.Router();
 
+const MIN_PASSWORD_LENGTH = 8;
+
+// Throttle credential guessing, keyed on client IP + the email being tried so
+// one attacker cannot lock out an unrelated user by hammering their address.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again later.',
+  keyFactory: (req) => `${req.ip}:${String(req.body?.email || '').toLowerCase()}`,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: 'Too many accounts created from this address. Please try again later.',
+});
+
 // REGISTER
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { full_name, email, password, role } = req.body;
 
@@ -14,6 +32,12 @@ router.post('/register', async (req, res) => {
     if (!full_name || !email || !password || !role) {
       return res.status(400).json({
         error: 'Full name, email, password, and role are required.',
+      });
+    }
+
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
       });
     }
 
@@ -77,7 +101,7 @@ router.post('/register', async (req, res) => {
 });
 
 // LOGIN
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 

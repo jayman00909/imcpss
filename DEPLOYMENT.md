@@ -78,6 +78,26 @@ VITE_API_BASE_URL=<your-railway-backend-url>/api
 
 The frontend includes a `vercel.json` rewrite so React Router routes refresh correctly.
 
+## Secrets
+
+`backend/.env` was previously committed to this repository. It is now untracked
+(the local file is still there for development), but the old values remain in
+git history, so treat them as public:
+
+1. Rotate the Supabase database password and update `DATABASE_URL`.
+2. Generate a new `JWT_SECRET` — rotating it invalidates all existing tokens,
+   so every user has to log in again:
+
+   ```text
+   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+   ```
+
+3. Set both in the Railway dashboard, never in a committed file.
+
+Only `.env.example` files are tracked. The backend refuses to start if
+`DATABASE_URL` or `JWT_SECRET` is missing, rather than falling back to a
+default secret.
+
 ## Pre-Deploy Verification
 
 Run these before deploying:

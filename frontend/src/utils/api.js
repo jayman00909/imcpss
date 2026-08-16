@@ -19,7 +19,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    // Bad credentials on login/register are for that form to display —
+    // only an expired token on an authenticated route forces a logout.
+    const isAuthAttempt = url.startsWith('/auth/');
+
+    if ((status === 401 || status === 403) && !isAuthAttempt) {
       // Token is expired or invalid — log the user out automatically
       store.dispatch(logout());
       window.location.href = '/login';
@@ -48,8 +54,7 @@ export const addTaskDependency = (taskId, dependsOnId) =>
   api.post(`/tasks/${taskId}/dependencies`, {
     depends_on_id: dependsOnId
   });
-export const assignTaskDeveloper = (id, developer_id) =>
-  api.put(`/tasks/${id}`, { assigned_developer_id: developer_id }); 
+// Developer assignment goes through updateTask — a single write path for tasks.
 export const updateTask = (id, data) => api.put(`/tasks/${id}`, data);
 export const updateTaskStatus = (id, status) => api.patch(`/tasks/${id}/status`, { status });
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);

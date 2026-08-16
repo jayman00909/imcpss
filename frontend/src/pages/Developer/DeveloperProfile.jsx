@@ -1,7 +1,7 @@
  import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { getMyProfile, updateMyProfile } from '../../utils/api';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/layout/MainLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
 

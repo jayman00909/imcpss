@@ -9,7 +9,38 @@ const scheduleRoutes = require('./routes/schedule');
 const developerRoutes = require('./routes/developers');
 const adminRoutes = require('./routes/admin');
 
+// Fail fast rather than starting with a broken/insecure configuration.
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  console.error(
+    `Missing required environment variable(s): ${missingEnv.join(', ')}.\n` +
+    'Set them in backend/.env (local) or in the host dashboard (production).'
+  );
+  process.exit(1);
+}
+
 const app = express();
+
+// Railway/Render terminate TLS in front of the app, so req.ip must come from
+// X-Forwarded-For for the login rate limiter to see real client addresses.
+app.set('trust proxy', 1);
+
+// Baseline security headers. This is a JSON API with no server-rendered HTML,
+// so a full helmet setup is not needed — these are the headers that matter.
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.set('Cross-Origin-Resource-Policy', 'same-site');
+
+  if (process.env.NODE_ENV === 'production') {
+    res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
+  next();
+});
 
 const defaultAllowedOrigins = [
   'http://localhost:5173',

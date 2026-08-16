@@ -1,6 +1,13 @@
  import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../store/authSlice';
+import { registerUser } from '../../utils/api';
 
 export default function Register() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,41 +17,32 @@ export default function Register() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    setMessage('');
+
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            full_name: fullName,
-            email,
-            password,
-            role,
-          }),
-        }
-      );
+      const { data } = await registerUser({
+        full_name: fullName,
+        email,
+        password,
+        role,
+      });
 
-      const data = await response.json();
+      setMessage('Registration successful!');
 
-      if (response.ok) {
-        setMessage('Registration successful!');
+      // The auth slice persists token + user to localStorage.
+      dispatch(login({
+        user: data.user,
+        token: data.token,
+      }));
 
-        console.log('Registration response:', data);
-
-        // Save the JWT token
-        localStorage.setItem('token', data.token);
-
-        // Save user information
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } else {
-        setMessage(data.error || 'Registration failed.');
-      }
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration error:', error);
-      setMessage('Unable to connect to the server.');
+      if (error.response) {
+        setMessage(error.response.data?.error || 'Registration failed.');
+      } else {
+        setMessage('Unable to connect to the server.');
+      }
     }
   };
 

@@ -1,11 +1,23 @@
- 
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  checkProjectAccess,
+  checkTaskAccess,
+  denyAccess,
+} = require('../middleware/projectAccess');
+
+// Every task endpoint requires a valid token.
+router.use(verifyToken);
 
 // GET all tasks for a project
 router.get('/project/:projectId', async (req, res) => {
   try {
+    const access = await checkProjectAccess(req.user, req.params.projectId);
+    if (!access.canView) return denyAccess(res, access);
+
     const result = await pool.query(`
       SELECT
         t.*,
@@ -28,6 +40,9 @@ router.get('/project/:projectId', async (req, res) => {
 // GET single task
 router.get('/:id', async (req, res) => {
   try {
+    const access = await checkTaskAccess(req.user, req.params.id);
+    if (!access.canView) return denyAccess(res, access, 'task');
+
     const result = await pool.query(
       'SELECT * FROM tasks WHERE id = $1',
       [req.params.id]
@@ -49,7 +64,7 @@ router.get('/:id', async (req, res) => {
 });
 
  // CREATE task
-router.post('/', async (req, res) => {
+router.post('/', requireRole('manager', 'admin'), async (req, res) => {
   try {
     const {
       project_id,
@@ -66,6 +81,9 @@ router.post('/', async (req, res) => {
         error: 'Project, title, deadline and effort hours are required.'
       });
     }
+
+    const access = await checkProjectAccess(req.user, project_id);
+    if (!access.canManage) return denyAccess(res, access);
 
     const result = await pool.query(`
       INSERT INTO tasks (
@@ -100,41 +118,80 @@ router.post('/', async (req, res) => {
 });
 
 // UPDATE task
-router.put('/:id', async (req, res) => {
+// Builds a partial update from only the fields present in the request body.
+// COALESCE cannot be used here: it treats an explicit null as "leave unchanged",
+// which makes clearing assigned_developer_id (unassigning) impossible.
+const UPDATABLE_TASK_FIELDS = [
+  'title',
+  'description',
+  'deadline',
+  'effort_hours',
+  'business_value',
+  'required_skills',
+  'assigned_developer_id',
+];
+
+router.put('/:id', requireRole('manager', 'admin'), async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      deadline,
-      effort_hours,
-      business_value,
-      required_skills,
-      assigned_developer_id
-    } = req.body;
+    const access = await checkTaskAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access, 'task');
+
+    const updates = [];
+    const values = [];
+
+    for (const field of UPDATABLE_TASK_FIELDS) {
+      if (!Object.prototype.hasOwnProperty.call(req.body, field)) continue;
+
+      let value = req.body[field];
+
+      if (field === 'assigned_developer_id') {
+        // '' from an unselected <select> and null both mean "unassign".
+        value = value === '' || value === null || value === undefined
+          ? null
+          : Number(value);
+
+        if (value !== null && Number.isNaN(value)) {
+          return res.status(400).json({
+            error: 'assigned_developer_id must be a number or null.',
+          });
+        }
+
+        if (value !== null) {
+          const developer = await pool.query(
+            `SELECT id FROM users WHERE id = $1 AND role = 'developer'`,
+            [value]
+          );
+
+          if (developer.rows.length === 0) {
+            return res.status(400).json({
+              error: 'Assigned user does not exist or is not a developer.',
+            });
+          }
+        }
+      }
+
+      if (field === 'required_skills' && value && typeof value === 'object') {
+        value = JSON.stringify(value);
+      }
+
+      values.push(value);
+      updates.push(`${field} = $${values.length}`);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        error: 'No updatable fields were provided.',
+      });
+    }
+
+    values.push(req.params.id);
 
     const result = await pool.query(`
       UPDATE tasks
-      SET
-        title = COALESCE($1, title),
-        description = COALESCE($2, description),
-        deadline = COALESCE($3, deadline),
-        effort_hours = COALESCE($4, effort_hours),
-        business_value = COALESCE($5, business_value),
-        required_skills = COALESCE($6, required_skills),
-        assigned_developer_id = COALESCE($7, assigned_developer_id),
-        updated_at = NOW()
-      WHERE id = $8
+      SET ${updates.join(', ')}, updated_at = NOW()
+      WHERE id = $${values.length}
       RETURNING *
-    `, [
-      title,
-      description,
-      deadline,
-      effort_hours,
-      business_value,
-      required_skills,
-      assigned_developer_id,
-      req.params.id
-    ]);
+    `, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -142,7 +199,16 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    res.json(result.rows[0]);
+    // Return the developer name too so the client can render without a refetch.
+    const task = result.rows[0];
+    const withName = await pool.query(`
+      SELECT t.*, u.full_name AS assigned_developer_name
+      FROM tasks t
+      LEFT JOIN users u ON u.id = t.assigned_developer_id
+      WHERE t.id = $1
+    `, [task.id]);
+
+    res.json(withName.rows[0] || task);
   } catch (error) {
     console.error('Update task error:', error);
     res.status(500).json({
@@ -154,6 +220,10 @@ router.put('/:id', async (req, res) => {
 // UPDATE task status
 router.patch('/:id/status', async (req, res) => {
   try {
+    // Any project member may move a task on the board, not just the manager.
+    const access = await checkTaskAccess(req.user, req.params.id);
+    if (!access.canView) return denyAccess(res, access, 'task');
+
     const { status } = req.body;
 
     const allowedStatuses = [
@@ -194,8 +264,11 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // DELETE task
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('manager', 'admin'), async (req, res) => {
   try {
+    const access = await checkTaskAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access, 'task');
+
     const result = await pool.query(
       'DELETE FROM tasks WHERE id = $1 RETURNING id',
       [req.params.id]
@@ -219,7 +292,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // ADD task dependency
-router.post('/:id/dependencies', async (req, res) => {
+router.post('/:id/dependencies', requireRole('manager', 'admin'), async (req, res) => {
   try {
     const { depends_on_id } = req.body;
 
@@ -229,21 +302,44 @@ router.post('/:id/dependencies', async (req, res) => {
       });
     }
 
+    if (Number(depends_on_id) === Number(req.params.id)) {
+      return res.status(400).json({
+        error: 'A task cannot depend on itself.'
+      });
+    }
+
+    const access = await checkTaskAccess(req.user, req.params.id);
+    if (!access.canManage) return denyAccess(res, access, 'task');
+
+    // The prerequisite must live in the same project.
+    const dependency = await checkTaskAccess(req.user, depends_on_id);
+    if (!dependency.found || dependency.projectId !== access.projectId) {
+      return res.status(400).json({
+        error: 'The prerequisite task must belong to the same project.'
+      });
+    }
+
     const result = await pool.query(`
       INSERT INTO task_dependencies (task_id, depends_on_id)
       VALUES ($1, $2)
+      ON CONFLICT (task_id, depends_on_id) DO NOTHING
       RETURNING *
     `, [req.params.id, depends_on_id]);
 
-    res.status(201).json(result.rows[0]);
-   } catch (error) {
-  console.error('Add dependency error:', error);
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        error: 'That dependency already exists.'
+      });
+    }
 
-  res.status(500).json({
-    error: 'Failed to add task dependency.',
-    details: error.message
-  });
-}
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Add dependency error:', error);
+
+    res.status(500).json({
+      error: 'Failed to add task dependency.'
+    });
+  }
 });
 
 module.exports = router;

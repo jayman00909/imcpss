@@ -17,10 +17,6 @@ body {
   min-height: 100vh;
 }
 
-div {
-  padding: 20px;
-}
-
 h1 {
   color: #333;
   margin-bottom: 10px;
@@ -30,26 +26,104 @@ p {
   color: #666;
 }
 
-input, button {
-  padding: 10px;
-  margin: 5px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+/* Application shell ------------------------------------------------------- */
+
+.main-layout {
+  min-height: 100vh;
 }
 
-button {
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  border: none;
+/* Page padding lives here. It used to come from a global `div { padding: 20px }`
+   rule, which also padded every nested div and fought the components' inline
+   styles (most visibly squashing the navbar and the Kanban cards). */
+.main-content {
+  padding: 24px;
 }
 
-button:hover {
-  background-color: #0056b3;
-}
+/* Loading spinner --------------------------------------------------------- */
 
-form {
+.loading-spinner {
   display: flex;
   flex-direction: column;
-  max-width: 300px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+}
+
+.loading-spinner p {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #dce8ff;
+  border-top-color: #2E5FA3;
+  border-radius: 50%;
+  animation: imcpss-spin 0.8s linear infinite;
+}
+
+@keyframes imcpss-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes imcpss-toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auth pages -------------------------------------------------------------- */
+/* Scoped to the auth screens so the form layout does not apply to the task
+   and project forms, which lay themselves out with their own inline grids. */
+
+.login,
+.register {
+  max-width: 380px;
+  margin: 60px auto;
+  padding: 32px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.login h1,
+.register h1 {
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.login form,
+.register form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login input,
+.login select,
+.register input,
+.register select {
+  padding: 10px 12px;
+  margin: 6px 0;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.login button,
+.register button {
+  margin-top: 14px;
+  padding: 11px;
+  background-color: #2E5FA3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.login button:hover,
+.register button:hover {
+  background-color: #1A3A6B;
 }

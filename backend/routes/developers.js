@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const verifyToken = require('../middleware/auth');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
 // GET my skill profile
 router.get('/profile', verifyToken, async (req, res) => {
@@ -32,8 +32,9 @@ router.put('/profile', verifyToken, async (req, res) => {
   }
 });
 
-// GET all developers (for managers to view)
-router.get('/', verifyToken, async (req, res) => {
+// GET all developers — used to populate manager-only assignment pickers, so it
+// is not exposed to developers (it would list every user's name and email).
+router.get('/', verifyToken, requireRole('manager', 'admin'), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT u.id, u.full_name, u.email, dp.skill_vector
