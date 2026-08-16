@@ -1,4 +1,4 @@
-# IMCPSS Deployment Guide
+# MCO Deployment Guide
 
 This release targets a split production deployment:
 

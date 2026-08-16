@@ -87,7 +87,7 @@ const styles = {
     boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
     fontSize: '14px',
     cursor: 'pointer',
-    animation: 'imcpss-toast-in 0.2s ease-out',
+    animation: 'mco-toast-in 0.2s ease-out',
   },
   icon: { fontSize: '16px', lineHeight: '20px' },
   message: { flex: 1, lineHeight: '20px' },

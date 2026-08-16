@@ -42,6 +42,8 @@ app.use((req, res, next) => {
   next();
 });
 
+// Localhost defaults apply only when nothing is configured, i.e. local dev.
+// In production CORS_ORIGIN (or FRONTEND_URL) must be set, and these are unused.
 const defaultAllowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -50,10 +52,24 @@ const defaultAllowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ];
-const allowedOrigins = (process.env.CORS_ORIGIN || defaultAllowedOrigins.join(','))
+
+// CORS_ORIGIN and FRONTEND_URL are equivalent; either may hold a
+// comma-separated list. Both are read so whichever name the host uses works.
+const configuredOrigins = [process.env.CORS_ORIGIN, process.env.FRONTEND_URL]
+  .filter(Boolean)
+  .join(',');
+
+const allowedOrigins = (configuredOrigins || defaultAllowedOrigins.join(','))
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, '')) // tolerate a trailing slash
   .filter(Boolean);
+
+if (process.env.NODE_ENV === 'production' && !configuredOrigins) {
+  console.warn(
+    'WARNING: running in production without CORS_ORIGIN/FRONTEND_URL set. ' +
+    'Only localhost origins are allowed, so the deployed frontend will be blocked.'
+  );
+}
 
 console.log('Allowed CORS origins:', allowedOrigins);
 
@@ -69,7 +85,7 @@ app.use(cors({
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({ message: 'IMCPSS Backend is running!', status: 'OK' });
+  res.json({ message: 'MCO Backend is running!', status: 'OK' });
 });
 
 app.get('/health', (req, res) => {

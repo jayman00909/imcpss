@@ -22,7 +22,7 @@ export default function Landing() {
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <div style={styles.logo}>🗂 IMCPSS</div>
+        <div style={styles.logo}>🗂 MCO</div>
         <div style={styles.navLinks}>
           <Link to="/login" style={styles.navLink}>Sign In</Link>
           <Link to="/register" style={styles.navCta}>Get Started</Link>
@@ -33,7 +33,7 @@ export default function Landing() {
         <span style={styles.badge}>Multi-Criteria Optimization for Software Teams</span>
         <h1 style={styles.heroTitle}>Stop guessing what your team should work on next.</h1>
         <p style={styles.heroSub}>
-          IMCPSS scores every task against deadline urgency, skill match, dependencies, business value,
+          MCO scores every task against deadline urgency, skill match, dependencies, business value,
           and effort — then recommends the order to work in and who should do it.
         </p>
         <div style={styles.heroCtas}>
@@ -79,7 +79,7 @@ export default function Landing() {
       </section>
 
       <footer style={styles.footer}>
-        <p>🗂 IMCPSS — Intelligent Multi-Criteria Project Scheduling System</p>
+        <p>🗂 MCO — Multi-Criteria Optimization Project Scheduling System</p>
       </footer>
     </div>
   );

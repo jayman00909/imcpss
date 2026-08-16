@@ -35,7 +35,7 @@ export default function Navbar() {
       <nav style={styles.nav}>
         <div style={styles.left}>
           <Link to="/dashboard" style={styles.logo}>
-            🗂 IMCPSS
+            🗂 MCO
           </Link>
         </div>
 

@@ -1,8 +1,9 @@
- import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../store/authSlice';
 import { loginUser } from '../../utils/api';
+import AuthLayout from '../../components/layout/AuthLayout';
 
 export default function Login() {
   const dispatch = useDispatch();
@@ -10,62 +11,82 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setMessage('');
+    setError('');
+    setSubmitting(true);
 
     try {
-      const { data } = await loginUser({ email, password });
+      const { data } = await loginUser({ email: email.trim(), password });
 
       // The auth slice persists token + user to localStorage.
-      dispatch(login({
-        user: data.user,
-        token: data.token,
-      }));
+      dispatch(login({ user: data.user, token: data.token }));
 
-      setMessage('Login successful!');
-
-      // Send user to dashboard
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      if (error.response) {
-        setMessage(error.response.data?.error || 'Login failed.');
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data?.error || 'Sign in failed.');
       } else {
-        setMessage('Unable to connect to the server.');
+        setError('Unable to reach the server. Please try again.');
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="login">
-      <h1>Login</h1>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to manage your projects and schedules."
+      footer="MCO — Multi-Criteria Optimization Project Scheduling System"
+    >
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            className="auth-input"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="password">Password</label>
+          <input
+            id="password"
+            className="auth-input"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
+        {error && (
+          <div className="auth-message is-error" role="alert">
+            {error}
+          </div>
+        )}
 
-        <button type="submit">
-          Login
+        <button className="auth-submit" type="submit" disabled={submitting}>
+          {submitting ? 'Signing in…' : 'Sign In'}
         </button>
       </form>
 
-      {message && <p>{message}</p>}
-    </div>
+      <p className="auth-switch">
+        Don&apos;t have an account?
+        <Link to="/register">Create account</Link>
+      </p>
+    </AuthLayout>
   );
 }

@@ -5,14 +5,14 @@
 // survived in localStorage but `user` came back null.
 const readStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('imcpss_user') || 'null');
+    return JSON.parse(localStorage.getItem('mco_user') || 'null');
   } catch {
-    localStorage.removeItem('imcpss_user');
+    localStorage.removeItem('mco_user');
     return null;
   }
 };
 
-const storedToken = localStorage.getItem('imcpss_token');
+const storedToken = localStorage.getItem('mco_token');
 
 const initialState = {
   user: readStoredUser(),
@@ -32,8 +32,8 @@ export const authSlice = createSlice({
       state.isAuthenticated = true;
 
       // Persist here so storage and Redux can never disagree.
-      localStorage.setItem('imcpss_token', action.payload.token);
-      localStorage.setItem('imcpss_user', JSON.stringify(action.payload.user));
+      localStorage.setItem('mco_token', action.payload.token);
+      localStorage.setItem('mco_user', JSON.stringify(action.payload.user));
     },
 
     logout: (state) => {
@@ -41,8 +41,8 @@ export const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
 
-      localStorage.removeItem('imcpss_token');
-      localStorage.removeItem('imcpss_user');
+      localStorage.removeItem('mco_token');
+      localStorage.removeItem('mco_user');
     },
   },
 });

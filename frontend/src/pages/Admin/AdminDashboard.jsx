@@ -95,7 +95,7 @@ export default function AdminDashboard() {
       <div style={s.header}>
         <div>
           <h1 style={s.title}>⚙️ System Administration</h1>
-          <p style={s.sub}>Full system overview — IMCPSS Admin Panel</p>
+          <p style={s.sub}>Full system overview — MCO Admin Panel</p>
         </div>
         <div style={s.adminBadge}>🔴 Admin Mode</div>
       </div>
