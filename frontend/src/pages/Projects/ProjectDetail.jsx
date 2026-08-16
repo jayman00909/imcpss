@@ -2,11 +2,18 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
-  getProject, getProjectTasks, createTask,
-  updateTaskStatus, deleteTask, getProjectMembers,
-  getAllDevelopers, addProjectMember
+  getProject,
+  getProjectTasks,
+  createTask,
+  updateTask,
+  updateTaskStatus,
+  deleteTask,
+  getProjectMembers,
+  getAllDevelopers,
+  addProjectMember,
+  addTaskDependency,
 } from '../../utils/api';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/layout/MainLayout'; 
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../components/common/Toast';
 
@@ -38,6 +45,7 @@ const SKILL_OPTIONS = [
 export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useSelector((s) => s.auth);
+  const currentUser = user || JSON.parse(localStorage.getItem('imcpss_user') || 'null');
   const navigate = useNavigate();
   const showToast = useToast();
 
@@ -55,6 +63,9 @@ export default function ProjectDetail() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [editingTaskId, setEditingTaskId] = useState(null);
+const [editTitle, setEditTitle] = useState('');
+
   const fetchAll = async () => {
     try {
       const [projRes, tasksRes, membersRes] = await Promise.all([
@@ -65,10 +76,11 @@ export default function ProjectDetail() {
       setProject(projRes.data);
       setTasks(tasksRes.data);
       setMembers(membersRes.data);
-      if (user.role === 'manager') {
-        const devRes = await getAllDevelopers();
-        setAllDevs(devRes.data);
-      }
+        if (currentUser?.role === 'manager') {
+  const devRes = await getAllDevelopers();
+  console.log('DEVELOPERS LOADED:', devRes.data);
+  setAllDevs(devRes.data);
+}
     } catch {
       setError('Could not load project.');
     } finally {
@@ -81,47 +93,173 @@ export default function ProjectDetail() {
   const getTasksByStatus = (status) =>
     tasks.filter(t => t.status === status);
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    try {
-      await updateTaskStatus(taskId, newStatus);
-      setTasks(tasks.map(t =>
-        t.id === taskId ? { ...t, status: newStatus } : t
-      ));
-    } catch {
-      showToast('Could not update task status.', 'error');
-    }
-  };
+ const handleAssignDeveloper = async (taskId, developerId) => {
+  try {
+    const response = await updateTask(taskId, {
+      assigned_developer_id: developerId ? Number(developerId) : null
+    });
 
-  const handleCreateTask = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
-    try {
-      const skillVector = {};
-      taskForm.required_skills.forEach(s => { skillVector[s] = 3; });
-      await createTask({
-        ...taskForm,
-        project_id: id,
-        required_skills: skillVector,
-      });
-      setShowTaskForm(false);
-      setTaskForm({
-        title: '', description: '', deadline: '',
-        effort_hours: '', business_value: 5, required_skills: []
-      });
-      fetchAll();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Could not create task.');
-    } finally {
-      setSaving(false);
-    }
-  };
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              ...response.data
+            }
+          : task
+      )
+    );
+
+    showToast('Developer assigned successfully.', 'success');
+  } catch (err) {
+    console.error(
+      'ASSIGN DEVELOPER ERROR:',
+      err.response?.data || err
+    );
+
+    showToast(
+      err.response?.data?.error || 'Could not assign developer.',
+      'error'
+    );
+  }
+};
+
+const handleStatusChange = async (taskId, newStatus) => {
+  try {
+    await updateTaskStatus(taskId, newStatus);
+
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? { ...task, status: newStatus }
+          : task
+      )
+    );
+  } catch {
+    showToast('Could not update task status.', 'error');
+  }
+};
+
+const handleAddDependency = async (taskId, dependsOnId) => {
+  if (!dependsOnId) return;
+
+  try {
+    await addTaskDependency(taskId, Number(dependsOnId));
+
+    showToast('Task dependency added successfully.', 'success');
+
+    fetchAll();
+  } catch (err) {
+    console.error(
+      'ADD DEPENDENCY ERROR:',
+      err.response?.data || err
+    );
+
+    showToast(
+      err.response?.data?.error ||
+      'Could not add task dependency.',
+      'error'
+    );
+  }
+};
+
+ const handleCreateTask = async (e) => {
+  e.preventDefault();
+  setSaving(true);
+  setError('');
+
+  try {
+    const skillVector = {};
+
+    taskForm.required_skills.forEach(skill => {
+      skillVector[skill] = 3;
+    });
+
+    await createTask({
+      ...taskForm,
+      project_id: id,
+      required_skills: skillVector,
+    });
+
+    setShowTaskForm(false);
+
+    setTaskForm({
+      title: '',
+      description: '',
+      deadline: '',
+      effort_hours: '',
+      business_value: 5,
+      required_skills: []
+    });
+
+    await fetchAll();
+
+    showToast('Task created successfully.', 'success');
+
+  } catch (err) {
+    console.error(
+      'CREATE TASK ERROR:',
+      err.response?.data || err
+    );
+
+    setError(
+      err.response?.data?.error ||
+      'Could not create task.'
+    );
+
+    showToast(
+      err.response?.data?.error ||
+      'Could not create task.',
+      'error'
+    );
+
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Delete this task?')) return;
     await deleteTask(taskId);
     setTasks(tasks.filter(t => t.id !== taskId));
   };
+
+const handleEditTask = async (taskId) => {
+  if (!editTitle.trim()) {
+    showToast('Task title is required.', 'error');
+    return;
+  }
+
+  try {
+    const response = await updateTask(taskId, {
+      title: editTitle.trim()
+    });
+
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? { ...task, ...response.data }
+          : task
+      )
+    );
+
+    setEditingTaskId(null);
+    setEditTitle('');
+
+    showToast('Task updated successfully.', 'success');
+  } catch (err) {
+    console.error(
+      'UPDATE TASK ERROR:',
+      err.response?.data || err
+    );
+
+    showToast(
+      err.response?.data?.error ||
+      'Could not update task.',
+      'error'
+    );
+  }
+};  
 
   const handleAddMember = async (userId) => {
     await addProjectMember(id, { user_id: userId });
@@ -173,14 +311,21 @@ export default function ProjectDetail() {
 
       {/* Action Buttons */}
       <div style={styles.actionBar}>
-        {user.role === 'manager' && (
+        {currentUser?.role === 'manager' && (
           <>
             <button style={styles.primaryBtn} onClick={() => setShowTaskForm(!showTaskForm)}>
               {showTaskForm ? '✕ Cancel' : '+ Add Task'}
             </button>
-            <button style={styles.secondaryBtn} onClick={() => setShowMemberPanel(!showMemberPanel)}>
-              👥 Manage Team ({members.length})
-            </button>
+           <button
+  type="button"
+  style={{ ...styles.secondaryBtn, position: 'relative', zIndex: 10 }}
+  onClick={() => {
+    console.log('Manage Team clicked');
+    setShowMemberPanel(prev => !prev);
+  }}
+>
+  👥 Manage Team ({members.length})
+</button>
           </>
         )}
         <button
@@ -189,12 +334,19 @@ export default function ProjectDetail() {
         >
           🧠 Generate MCO Schedule →
         </button>
+       <button
+  type="button"
+  style={styles.reportBtn}
+  onClick={() => navigate(`/projects/${id}/reports`)}
+>
+  📊 Reports & Analytics
+</button> 
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
 
       {/* Team Member Panel */}
-      {showMemberPanel && user.role === 'manager' && (
+      {showMemberPanel && (
         <div style={styles.panel}>
           <h3 style={styles.panelTitle}>👥 Project Team</h3>
           <div style={styles.memberGrid}>
@@ -231,7 +383,7 @@ export default function ProjectDetail() {
       )}
 
       {/* Task Creation Form */}
-      {showTaskForm && user.role === 'manager' && (
+      {showTaskForm && currentUser?.role === 'manager' && ( 
         <div style={styles.panel}>
           <h3 style={styles.panelTitle}>➕ Create New Task</h3>
           <form onSubmit={handleCreateTask}>
@@ -317,13 +469,64 @@ export default function ProjectDetail() {
               getTasksByStatus(status).map(task => (
                 <div key={task.id} style={styles.taskCard}>
                   <div style={styles.taskTop}>
-                    <p style={styles.taskTitle}>{task.title}</p>
-                    {user.role === 'manager' && (
-                      <button
-                        style={styles.deleteTaskBtn}
-                        onClick={() => handleDeleteTask(task.id)}
-                      >✕</button>
-                    )}
+                    {editingTaskId === task.id ? (
+  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <input
+      value={editTitle}
+      onChange={(e) => setEditTitle(e.target.value)}
+      style={{
+        ...styles.input,
+        flex: 1,
+        margin: 0
+      }}
+      autoFocus
+    />
+
+    <button
+      type="button"
+      onClick={() => handleEditTask(task.id)}
+      style={styles.saveBtn}
+    >
+      Save
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setEditingTaskId(null);
+        setEditTitle('');
+      }}
+      style={styles.cancelBtn}
+    >
+      Cancel
+    </button>
+  </div>
+) : (
+ <p style={styles.taskTitle}>{task.title}</p>
+)}
+
+{currentUser?.role === 'manager' && (
+  <>
+    <button
+      type="button"
+      style={styles.editBtn}
+      onClick={() => {
+        setEditingTaskId(task.id);
+        setEditTitle(task.title);
+      }}
+    >
+      Edit
+    </button>
+
+    <button
+      type="button"
+      style={styles.deleteTaskBtn}
+      onClick={() => handleDeleteTask(task.id)}
+    >
+      ✕
+    </button>
+  </>
+)}
                   </div>
 
                   {task.description && (
@@ -350,17 +553,90 @@ export default function ProjectDetail() {
                       ))}
                     </div>
                   )}
+                 
+              {currentUser?.role === 'manager' && (
+  <div style={{ marginBottom: '10px' }}>
+    <label style={{
+      display: 'block',
+      fontSize: '12px',
+      color: '#555',
+      marginBottom: '5px',
+      fontWeight: '600'
+    }}>
+      Assign Developer
+    </label>
 
+    <select
+      value={task.assigned_developer_id || ''}
+      onChange={(e) => handleAssignDeveloper(task.id, e.target.value)}
+      style={{
+        width: '100%',
+        padding: '8px',
+        border: '1px solid #ccc',
+        borderRadius: '6px',
+        background: 'white',
+        cursor: 'pointer'
+      }}
+    >
+      <option value="">Unassigned</option>
+
+      {allDevs.map((dev) => (
+        <option key={dev.id} value={dev.id}>
+          {dev.full_name}
+        </option>
+      ))}
+    </select>
+
+    <div style={{ marginTop: '10px' }}>
+  <label style={{ 
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: '600',
+    marginBottom: '5px',
+    color: '#555'
+  }}>
+    Depends On
+  </label>
+
+  <select
+    defaultValue=""
+    onChange={(e) =>
+      handleAddDependency(task.id, e.target.value)
+    }
+    style={{
+      width: '100%',
+      padding: '8px',
+      border: '1px solid #ccc',
+      borderRadius: '6px',
+      background: 'white',
+      cursor: 'pointer'
+    }}
+  >
+    <option value="">No dependency</option>
+
+    {tasks
+      .filter(otherTask => otherTask.id !== task.id)
+      .map(otherTask => (
+        <option key={otherTask.id} value={otherTask.id}>
+          {otherTask.title}
+        </option>
+      ))}
+  </select>
+</div>
+  </div>
+)}   
+ 
                   {/* Status changer */}
                   <select
-                    value={task.status}
-                    onChange={e => handleStatusChange(task.id, e.target.value)}
-                    style={styles.statusSelect}
-                  >
-                    {STATUSES.map(s => (
-                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
+  value={task.status}
+  onChange={e => handleStatusChange(task.id, e.target.value)}
+  style={styles.statusSelect}
+>
+  <option value="todo">To Do</option>
+  <option value="in_progress">In Progress</option>
+  <option value="in_review">In Review</option>
+  <option value="done">Done</option>
+</select>
                 </div>
               ))
             )}
@@ -411,6 +687,15 @@ const styles = {
     color: 'white', border: 'none', padding: '10px 20px',
     borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px',
   },
+  reportBtn: {
+  background: '#8E44AD',
+  color: 'white',
+  border: 'none',
+  padding: '10px 16px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontWeight: '600',
+},
   error: {
     background: '#fdecea', color: '#c0392b', padding: '12px',
     borderRadius: '8px', marginBottom: '16px', fontSize: '14px',
@@ -477,6 +762,18 @@ const styles = {
   },
   taskTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' },
   taskTitle: { fontSize: '14px', fontWeight: '600', color: '#1a1a2e', flex: 1, lineHeight: '1.4' },
+  editBtn: {
+  background: '#eef4ff',
+  color: '#2E5FA3',
+  border: '1px solid #d6e4ff',
+  padding: '6px 12px',
+  borderRadius: '7px',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '12px',
+  transition: 'all 0.2s ease',
+  marginRight: '6px'
+},
   deleteTaskBtn: {
     background: 'none', border: 'none', color: '#ccc',
     cursor: 'pointer', fontSize: '14px', padding: '0 0 0 6px',
@@ -493,8 +790,15 @@ const styles = {
     fontSize: '10px', background: '#eef2ff', color: '#4a6fa5',
     padding: '2px 8px', borderRadius: '10px',
   },
-  statusSelect: {
-    width: '100%', padding: '6px 8px', border: '1px solid #dee2e6',
-    borderRadius: '6px', fontSize: '12px', background: '#fafafa', cursor: 'pointer',
-  },
+ statusSelect: {
+  padding: '6px 10px',
+  border: '1px solid #d9dee7',
+  borderRadius: '6px',
+  background: 'white',
+  color: '#333',
+  fontSize: '12px',
+  fontWeight: '600',
+  cursor: 'pointer',
+  outline: 'none'
+},
 };

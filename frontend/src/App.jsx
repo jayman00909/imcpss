@@ -11,6 +11,7 @@ import SchedulePage from './pages/Schedule/SchedulePage';
 import DeveloperProfile from './pages/Developer/DeveloperProfile';
 import DeveloperManagement from './pages/Developer/DeveloperManagement';
 import AlgorithmComparison from './pages/Schedule/AlgorithmComparison';
+import ReportsPage from './pages/Reports/ReportsPage';
 import './styles/global.css';
 
 function ProtectedRoute({ children }) {
@@ -33,8 +34,25 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
         <Route path="/projects/:id/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
+       <Route
+  path="/projects/:id/reports"
+  element={
+    <ProtectedRoute>
+      <ReportsPage />
+    </ProtectedRoute>
+  }
+/>
         <Route path="/profile" element={<ProtectedRoute><DeveloperProfile /></ProtectedRoute>} />
         <Route path="/projects/:id/compare" element={<ProtectedRoute><AlgorithmComparison /></ProtectedRoute>} />
+       <Route
+  path="/projects/:id/reports"
+  element={
+    <ProtectedRoute>
+      <ReportsPage />
+    </ProtectedRoute>
+  }
+/>
+
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="/developers" element={<ProtectedRoute><DeveloperManagement /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" />} />

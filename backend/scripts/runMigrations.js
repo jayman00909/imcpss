@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const pool = require('../config/db');
 
 async function runMigrations() {
@@ -46,7 +47,7 @@ runMigrations()
     console.log('Migrations complete.');
   })
   .catch(async (err) => {
-    console.error('Migration failed:', err.message);
+    console.error('Migration failed:', err);
     await pool.end();
     process.exit(1);
   });

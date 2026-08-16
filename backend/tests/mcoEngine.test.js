@@ -44,7 +44,7 @@ const ordered = runMCO(
   projectMeta
 );
 assert.deepStrictEqual(ordered.map((task) => task.id), [1, 2]);
-assert.strictEqual(ordered[1].is_blocked, false);
+assert.strictEqual(ordered[1].is_blocked, true);
 
 const cyclic = runMCO(
   [

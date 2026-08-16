@@ -74,21 +74,40 @@ function runMCO(tasks, developers, weights, projectMeta) {
     // C5: Effort Efficiency
     const E = 1 - (task.effort_hours / maxEffort);
 
-    // C2: Best Developer Skill Match
-    let bestDev = null;
-    let bestSkillScore = 0;
+    // C2: Developer Skill Match
+// If the manager manually assigned a developer,
+// preserve that assignment. Otherwise, choose the
+// developer with the best skill match.
+let bestDev = null;
+let bestSkillScore = 0;
 
-    developers.forEach(dev => {
-      const skillVector = dev.skill_vector || {};
-      const requiredSkills = task.required_skills || {};
-      const S = cosineSimilarity(requiredSkills, skillVector);
-      if (S > bestSkillScore) {
-        bestSkillScore = S;
-        bestDev = dev;
-      }
-    });
+if (task.assigned_developer_id) {
+  bestDev = developers.find(
+    dev => Number(dev.id) === Number(task.assigned_developer_id)
+  );
 
-    const S = bestSkillScore;
+  if (bestDev) {
+    bestSkillScore = cosineSimilarity(
+      task.required_skills || {},
+      bestDev.skill_vector || {}
+    );
+  }
+}
+
+if (!bestDev) {
+  developers.forEach(dev => {
+    const skillVector = dev.skill_vector || {};
+    const requiredSkills = task.required_skills || {};
+    const score = cosineSimilarity(requiredSkills, skillVector);
+
+    if (score > bestSkillScore) {
+      bestSkillScore = score;
+      bestDev = dev;
+    }
+  });
+}
+
+const S = bestSkillScore;
     const P = w1 * U + w2 * S + w3 * D + w4 * V + w5 * E;
 
     return {
@@ -102,7 +121,7 @@ function runMCO(tasks, developers, weights, projectMeta) {
         business_value: parseFloat(V.toFixed(4)),
         effort_efficiency: parseFloat(E.toFixed(4))
       },
-      is_blocked: D === 0 && total > 0
+      is_blocked: total > 0 && completed < total
     };
   });
 

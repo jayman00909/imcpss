@@ -3,7 +3,7 @@ import { store } from '../store/index';
 import { logout } from '../store/authSlice';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050/api',
 });
 
 // Automatically attach the JWT token to every request
@@ -44,15 +44,22 @@ export const addProjectMember = (id, data) => api.post(`/projects/${id}/members`
 // Tasks
 export const getProjectTasks = (projectId) => api.get(`/tasks/project/${projectId}`);
 export const createTask = (data) => api.post('/tasks', data);
+export const addTaskDependency = (taskId, dependsOnId) =>
+  api.post(`/tasks/${taskId}/dependencies`, {
+    depends_on_id: dependsOnId
+  });
+export const assignTaskDeveloper = (id, developer_id) =>
+  api.put(`/tasks/${id}`, { assigned_developer_id: developer_id }); 
 export const updateTask = (id, data) => api.put(`/tasks/${id}`, data);
 export const updateTaskStatus = (id, status) => api.patch(`/tasks/${id}/status`, { status });
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);
-export const addTaskDependency = (id, depends_on_id) =>
-  api.post(`/tasks/${id}/dependencies`, { depends_on_id });
+ 
 
 // Schedule
 export const generateSchedule = (projectId, weights) =>
   api.post(`/schedule/generate/${projectId}`, { weights });
+export const getSchedule = (projectId) =>
+  api.get(`/schedule/${projectId}`);
 
 // Developers
 export const getMyProfile = () => api.get('/developers/profile');
