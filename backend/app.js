@@ -23,9 +23,11 @@ if (missingEnv.length > 0) {
 
 const app = express();
 
-// Railway/Render terminate TLS in front of the app, so req.ip must come from
-// X-Forwarded-For for the login rate limiter to see real client addresses.
-app.set('trust proxy', 1);
+// Render/Railway terminate TLS in front of the app, so req.ip must come from
+// X-Forwarded-For. Trusting the whole chain makes req.ip the leftmost entry,
+// i.e. the real client. A fixed hop count picked up a rotating internal
+// address instead, which silently defeated the login rate limiter.
+app.set('trust proxy', true);
 
 // Baseline security headers. This is a JSON API with no server-rendered HTML,
 // so a full helmet setup is not needed — these are the headers that matter.

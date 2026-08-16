@@ -8,13 +8,21 @@ const router = express.Router();
 
 const MIN_PASSWORD_LENGTH = 8;
 
-// Throttle credential guessing, keyed on client IP + the email being tried so
-// one attacker cannot lock out an unrelated user by hammering their address.
+// Throttle credential guessing against a single account.
+//
+// Keyed on the email rather than the client IP: behind a load balancer the
+// observed IP is not reliably the caller's, and a key that changes between
+// requests means the limiter never trips at all. The email is always stable,
+// so brute forcing one account is capped no matter where it comes from.
+// Falls back to IP only when no email was supplied.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: 'Too many login attempts. Please try again later.',
-  keyFactory: (req) => `${req.ip}:${String(req.body?.email || '').toLowerCase()}`,
+  message: 'Too many login attempts for this account. Please try again later.',
+  keyFactory: (req) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    return email ? `email:${email}` : `ip:${req.ip}`;
+  },
 });
 
 const registerLimiter = rateLimit({
