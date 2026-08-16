@@ -10,6 +10,7 @@
  * the cleanup step, so existing data is never touched.
  */
 require('dotenv').config();
+const crypto = require('crypto');
 const pool = require('../config/db');
 
 const BASE = process.env.API_BASE_URL || 'http://localhost:5050/api';
@@ -45,9 +46,18 @@ async function call(method, path, { token, body } = {}) {
   return { status: res.status, data, headers: res.headers };
 }
 
+// Manager signups need the invite code when the server has one configured.
 const register = (name, role, suffix) =>
   call('POST', '/auth/register', {
-    body: { full_name: name, email: `${TAG}_${suffix}@example.com`, password: PW, role },
+    body: {
+      full_name: name,
+      email: `${TAG}_${suffix}@example.com`,
+      password: PW,
+      role,
+      ...(role === 'manager' && process.env.MANAGER_SIGNUP_CODE
+        ? { manager_code: process.env.MANAGER_SIGNUP_CODE }
+        : {}),
+    },
   });
 
 async function run() {
@@ -231,6 +241,80 @@ async function run() {
     method: 'OPTIONS', headers: { Origin: 'http://evil.example.com', 'Access-Control-Request-Method': 'POST' },
   });
   check('unknown origin blocked', evil.status === 403, `got ${evil.status}`);
+
+  console.log('\n=== MANAGER SIGNUP LOCKDOWN ===');
+  if (process.env.MANAGER_SIGNUP_CODE) {
+    check('manager signup without a code -> 403',
+      (await call('POST', '/auth/register', { body: { full_name: 'X', email: `${TAG}_nocode@example.com`, password: PW, role: 'manager' } })).status === 403);
+    check('manager signup with a wrong code -> 403',
+      (await call('POST', '/auth/register', { body: { full_name: 'X', email: `${TAG}_badcode@example.com`, password: PW, role: 'manager', manager_code: 'wrong-code' } })).status === 403);
+    const good = await call('POST', '/auth/register', {
+      body: { full_name: 'E2E Coded Manager', email: `${TAG}_goodcode@example.com`, password: PW, role: 'manager', manager_code: process.env.MANAGER_SIGNUP_CODE },
+    });
+    check('manager signup with the correct code -> 201', good.status === 201, `got ${good.status}`);
+    check('developer signup still needs no code -> 201',
+      (await call('POST', '/auth/register', { body: { full_name: 'X', email: `${TAG}_devnocode@example.com`, password: PW, role: 'developer' } })).status === 201);
+  } else {
+    console.log('  SKIP  MANAGER_SIGNUP_CODE not set for this run');
+  }
+
+  console.log('\n=== PASSWORD RESET ===');
+  const resetEmail = `${TAG}_ada@example.com`;
+
+  const unknown = await call('POST', '/auth/forgot-password', { body: { email: `${TAG}_nosuchuser@example.com` } });
+  check('forgot-password for unknown email -> 200 (no user enumeration)', unknown.status === 200, `got ${unknown.status}`);
+
+  const known = await call('POST', '/auth/forgot-password', { body: { email: resetEmail } });
+  check('forgot-password for known email -> 200', known.status === 200);
+  check('both replies are byte-identical', JSON.stringify(known.data) === JSON.stringify(unknown.data));
+
+  const issued = await pool.query(
+    `SELECT COUNT(*)::int AS n FROM password_reset_tokens prt
+     JOIN users u ON u.id = prt.user_id WHERE LOWER(u.email) = $1`,
+    [resetEmail.toLowerCase()]
+  );
+  check('a reset token row was created', issued.rows[0].n >= 1, `${issued.rows[0].n} rows`);
+
+  const stored = await pool.query(
+    `SELECT prt.token_hash FROM password_reset_tokens prt
+     JOIN users u ON u.id = prt.user_id WHERE LOWER(u.email) = $1 LIMIT 1`,
+    [resetEmail.toLowerCase()]
+  );
+  check('only a hash is stored, never the raw token', /^[a-f0-9]{64}$/.test(stored.rows[0].token_hash));
+
+  check('reset with a bogus token -> 400',
+    (await call('POST', '/auth/reset-password', { body: { token: 'not-a-real-token', password: 'BrandNewPass1' } })).status === 400);
+
+  // Plant a token we know the plaintext of, since the real one only goes by email.
+  const raw = crypto.randomBytes(32).toString('hex');
+  const userRow = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [resetEmail.toLowerCase()]);
+  await pool.query(
+    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '1 hour')`,
+    [userRow.rows[0].id, crypto.createHash('sha256').update(raw).digest('hex')]
+  );
+
+  check('reset with a valid token but short password -> 400',
+    (await call('POST', '/auth/reset-password', { body: { token: raw, password: 'abc' } })).status === 400);
+
+  const NEW_PW = 'BrandNewPass1';
+  check('reset with a valid token -> 200',
+    (await call('POST', '/auth/reset-password', { body: { token: raw, password: NEW_PW } })).status === 200);
+  check('the new password works',
+    (await call('POST', '/auth/login', { body: { email: resetEmail, password: NEW_PW } })).status === 200);
+  check('the old password no longer works',
+    (await call('POST', '/auth/login', { body: { email: resetEmail, password: PW } })).status === 401);
+  check('the token cannot be reused -> 400',
+    (await call('POST', '/auth/reset-password', { body: { token: raw, password: 'AnotherPass99' } })).status === 400);
+
+  const expired = crypto.randomBytes(32).toString('hex');
+  await pool.query(
+    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, NOW() - INTERVAL '1 minute')`,
+    [userRow.rows[0].id, crypto.createHash('sha256').update(expired).digest('hex')]
+  );
+  check('an expired token is rejected -> 400',
+    (await call('POST', '/auth/reset-password', { body: { token: expired, password: 'AnotherPass99' } })).status === 400);
 
   console.log('\n=== LOGIN RATE LIMIT (last: consumes the quota) ===');
   let limited = false;

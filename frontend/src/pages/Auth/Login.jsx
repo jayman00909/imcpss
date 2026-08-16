@@ -59,7 +59,12 @@ export default function Login() {
         </div>
 
         <div className="auth-field">
-          <label className="auth-label" htmlFor="password">Password</label>
+          <div className="auth-label-row">
+            <label className="auth-label" htmlFor="password">Password</label>
+            <Link className="auth-inline-link" to="/forgot-password">
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             className="auth-input"

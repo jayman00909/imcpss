@@ -37,6 +37,10 @@ api.interceptors.response.use(
 // Auth
 export const registerUser = (data) => api.post('/auth/register', data);
 export const loginUser = (data) => api.post('/auth/login', data);
+export const requestPasswordReset = (email) =>
+  api.post('/auth/forgot-password', { email });
+export const resetPassword = (token, password) =>
+  api.post('/auth/reset-password', { token, password });
 
 // Projects
 export const getProjects = () => api.get('/projects');

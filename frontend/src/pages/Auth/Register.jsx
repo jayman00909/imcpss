@@ -33,6 +33,7 @@ export default function Register() {
     password: '',
     confirm_password: '',
     role: 'developer',
+    manager_code: '',
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +63,8 @@ export default function Register() {
         email: form.email.trim(),
         password: form.password,
         role: form.role,
+        // Only meaningful for manager signups; ignored otherwise.
+        ...(form.role === 'manager' ? { manager_code: form.manager_code.trim() } : {}),
       });
 
       // The auth slice persists token + user to localStorage.
@@ -165,6 +168,27 @@ export default function Register() {
             ))}
           </div>
         </div>
+
+        {form.role === 'manager' && (
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="manager_code">
+              Manager invite code
+            </label>
+            <input
+              id="manager_code"
+              className="auth-input"
+              type="text"
+              placeholder="Provided by your administrator"
+              value={form.manager_code}
+              onChange={update('manager_code')}
+            />
+            <span className="auth-hint">
+              Manager accounts can create projects and manage teams, so they
+              require an invite code. Leave blank if your administrator has
+              not set one.
+            </span>
+          </div>
+        )}
 
         {error && (
           <div className="auth-message is-error" role="alert">
