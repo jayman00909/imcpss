@@ -476,7 +476,7 @@ const styles = {
   container: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '30px 24px 50px',
+    paddingBottom: '30px',
   },
 
   center: {

@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav style={styles.nav}>
+      <nav className="app-nav" style={styles.nav}>
         <div style={styles.left}>
           <Link to="/dashboard" style={styles.logo}>
             <Icon name="logo" size={22} strokeWidth={1.9} />
@@ -41,7 +41,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div style={styles.right}>
+        <div className="app-nav-right" style={styles.right}>
           {user && (
             <>
               {/* JWT Status Badge */}
@@ -64,9 +64,9 @@ export default function Navbar() {
   </span>
 </button>
 
-              <span style={styles.welcome}>
+              <span className="app-nav-welcome" style={styles.welcome}>
                 <Icon name="user" size={14} />
-                {user.full_name}
+                <span className="app-nav-name">{user.full_name}</span>
                 <span style={{ ...styles.rolePill, ...styles.pillInner }}>
                   <Icon name={user.role === 'manager' ? 'clipboard' : 'code'} size={11} />
                   {user.role === 'manager' ? 'Manager' : 'Developer'}
@@ -182,11 +182,13 @@ export default function Navbar() {
 const styles = {
   nav: {
     background: '#2E5FA3',
-    padding: '0 24px',
-    height: '60px',
+    padding: '10px 24px',
+    minHeight: '60px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '10px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
     position: 'sticky',
     top: 0,
@@ -234,7 +236,7 @@ const styles = {
   tokenPanelInner: {
     background: 'white', borderRadius: '0 0 12px 12px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-    padding: '20px', width: '480px',
+    padding: '20px', width: '100%', maxWidth: '480px',
     border: '1px solid #e0e8ff', borderTop: 'none',
   },
   tokenHeader: {
@@ -247,7 +249,7 @@ const styles = {
     color: '#aaa', fontSize: '16px',
   },
   tokenGrid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr',
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
     gap: '12px', marginBottom: '16px',
   },
   tokenItem: {

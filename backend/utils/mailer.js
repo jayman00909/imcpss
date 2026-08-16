@@ -1,34 +1,67 @@
+const nodemailer = require('nodemailer');
+
 /**
- * Minimal transactional email sender.
+ * Transactional email sender with two interchangeable transports.
  *
- * Uses Resend's HTTP API via fetch, so there is no extra dependency to install.
- * Configure with:
- *   RESEND_API_KEY   your Resend API key
- *   MAIL_FROM        verified sender, e.g. "MCO <noreply@yourdomain.com>"
+ * SMTP (preferred for this project) — set:
+ *   SMTP_USER   your full Gmail address
+ *   SMTP_PASS   a Google App Password, NOT your normal password
+ *   MAIL_FROM   optional display name, e.g. "MCO <you@gmail.com>"
  *
- * If RESEND_API_KEY is not set the message is logged to the server console
- * instead of being sent. That keeps local development working without an
- * account, but it means password reset links are NOT delivered until the key
- * is configured — see DEPLOYMENT.md.
+ * Resend (HTTP API) — set:
+ *   RESEND_API_KEY
+ *   MAIL_FROM
+ *
+ * SMTP is tried first because Resend's shared `onboarding@resend.dev` sender
+ * only delivers to the account owner's own address, so password reset would
+ * silently fail for every other user. Sending through your own mailbox
+ * reaches anyone without needing a verified domain.
+ *
+ * With neither configured the message is logged to the server console, which
+ * keeps local development working but delivers nothing.
  */
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
+const smtpConfigured = () =>
+  Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+
+const resendConfigured = () => Boolean(process.env.RESEND_API_KEY);
+
 function isConfigured() {
-  return Boolean(process.env.RESEND_API_KEY);
+  return smtpConfigured() || resendConfigured();
 }
 
-async function sendMail({ to, subject, html, text }) {
-  if (!isConfigured()) {
-    console.log(
-      '\n--- EMAIL NOT SENT (RESEND_API_KEY not configured) ---\n' +
-      `To:      ${to}\n` +
-      `Subject: ${subject}\n` +
-      `${text}\n` +
-      '------------------------------------------------------\n'
-    );
-    return { delivered: false, reason: 'not_configured' };
-  }
+let transporter = null;
 
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 465),
+      secure: String(process.env.SMTP_PORT || '465') === '465',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+  }
+  return transporter;
+}
+
+function fromAddress() {
+  if (process.env.MAIL_FROM) return process.env.MAIL_FROM;
+  if (smtpConfigured()) return `MCO <${process.env.SMTP_USER}>`;
+  return 'MCO <onboarding@resend.dev>';
+}
+
+async function sendViaSmtp({ to, subject, html, text }) {
+  try {
+    await getTransporter().sendMail({ from: fromAddress(), to, subject, html, text });
+    return { delivered: true, via: 'smtp' };
+  } catch (error) {
+    console.error('SMTP delivery error:', error.message);
+    return { delivered: false, reason: 'smtp_error' };
+  }
+}
+
+async function sendViaResend({ to, subject, html, text }) {
   try {
     const res = await fetch(RESEND_ENDPOINT, {
       method: 'POST',
@@ -36,26 +69,33 @@ async function sendMail({ to, subject, html, text }) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: process.env.MAIL_FROM || 'MCO <onboarding@resend.dev>',
-        to: [to],
-        subject,
-        html,
-        text,
-      }),
+      body: JSON.stringify({ from: fromAddress(), to: [to], subject, html, text }),
     });
 
     if (!res.ok) {
-      const detail = await res.text();
-      console.error(`Email delivery failed (${res.status}): ${detail}`);
+      console.error(`Resend delivery failed (${res.status}): ${await res.text()}`);
       return { delivered: false, reason: 'provider_error' };
     }
 
-    return { delivered: true };
+    return { delivered: true, via: 'resend' };
   } catch (error) {
-    console.error('Email delivery error:', error.message);
+    console.error('Resend delivery error:', error.message);
     return { delivered: false, reason: 'network_error' };
   }
+}
+
+async function sendMail({ to, subject, html, text }) {
+  if (smtpConfigured()) return sendViaSmtp({ to, subject, html, text });
+  if (resendConfigured()) return sendViaResend({ to, subject, html, text });
+
+  console.log(
+    '\n--- EMAIL NOT SENT (no mail transport configured) ---\n' +
+    `To:      ${to}\n` +
+    `Subject: ${subject}\n` +
+    `${text}\n` +
+    '-----------------------------------------------------\n'
+  );
+  return { delivered: false, reason: 'not_configured' };
 }
 
 function passwordResetEmail({ fullName, resetUrl }) {

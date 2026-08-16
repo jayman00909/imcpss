@@ -219,7 +219,7 @@ export default function SchedulePage() {
                   No tasks were included in the generated schedule.
                 </div>
               ) : (
-                <div style={styles.tableWrapper}>
+                <div className="table-scroll">
                   <table style={styles.table}>
                     <thead>
                       <tr>
@@ -394,7 +394,6 @@ function getStatusStyle(status) {
 }
 const styles = {
   container: {
-    padding: '24px',
     maxWidth: '1400px',
     margin: '0 auto'
   },
@@ -406,6 +405,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    flexWrap: 'wrap',
     gap: '20px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
   },
@@ -457,7 +457,7 @@ const styles = {
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
     gap: '16px',
     marginBottom: '20px'
   },
@@ -500,7 +500,7 @@ const styles = {
   },
   weightsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
     gap: '12px',
     marginTop: '16px'
   },

@@ -224,7 +224,7 @@ export default function AdminDashboard() {
       {tab === 'users' && (
         <div style={s.card}>
           <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="users" size={16} />All Registered Users</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-scroll">
             <table style={s.table}>
               <thead>
                 <tr>
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
       {tab === 'projects' && (
         <div style={s.card}>
           <h3 style={{ ...s.cardTitle, ...s.inline }}><Icon name="clipboard" size={16} />All Projects in System</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-scroll">
             <table style={s.table}>
               <thead>
                 <tr>
@@ -339,7 +339,10 @@ export default function AdminDashboard() {
 
 const s = {
   inline: { display: 'inline-flex', alignItems: 'center', gap: '7px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
+  header: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    flexWrap: 'wrap', gap: '14px', marginBottom: '24px',
+  },
   title: { fontSize: '24px', fontWeight: '700', color: '#1a1a2e' },
   sub: { color: '#6c757d', fontSize: '14px', marginTop: '4px' },
   adminBadge: {
@@ -355,7 +358,7 @@ const s = {
     transition: 'all 0.15s',
   },
   statGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
     gap: '16px', marginBottom: '20px',
   },
   statCard: {
@@ -365,7 +368,7 @@ const s = {
   statIcon: { marginBottom: '10px', display: 'flex' },
   statValue: { fontSize: '32px', fontWeight: '800', marginBottom: '4px' },
   statLabel: { fontSize: '12px', color: '#6c757d', fontWeight: '600' },
-  twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
+  twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' },
   card: { background: 'white', borderRadius: '12px', padding: '24px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
   cardTitle: { fontSize: '16px', fontWeight: '700', color: '#1a1a2e', marginBottom: '16px' },
   recentRow: {
@@ -376,7 +379,7 @@ const s = {
   recentSub: { fontSize: '12px', color: '#888', marginTop: '2px' },
   rolePill: { padding: '3px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
   datePill: { background: '#f0f2f5', color: '#555', padding: '3px 10px', borderRadius: '12px', fontSize: '11px' },
-  healthGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '16px' },
+  healthGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' },
   healthItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8faff', borderRadius: '10px' },
   healthDot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
   healthLabel: { fontSize: '13px', fontWeight: '600', color: '#333' },

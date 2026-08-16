@@ -715,6 +715,7 @@ const handleEditTask = async (taskId) => {
 const styles = {
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    flexWrap: 'wrap', gap: '20px',
     background: 'white', borderRadius: '12px', padding: '24px',
     marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
   },
@@ -773,7 +774,7 @@ const styles = {
   },
   panelTitle: { fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: '#1a1a2e' },
   panelSubtitle: { fontSize: '13px', fontWeight: '600', color: '#555', marginBottom: '10px' },
-  memberGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' },
+  memberGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' },
   memberTag: {
     background: '#f0f4ff', padding: '8px 12px', borderRadius: '8px',
     marginBottom: '8px', fontSize: '13px',
@@ -788,7 +789,7 @@ const styles = {
     padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
   },
   muted: { color: '#6c757d', fontSize: '13px' },
-  formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' },
   field: { display: 'flex', flexDirection: 'column' },
   label: { fontSize: '13px', fontWeight: '600', color: '#444', marginBottom: '6px' },
   input: {
@@ -803,7 +804,8 @@ const styles = {
   },
   kanban: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    // Columns reflow and stack rather than squashing on narrow screens.
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '16px',
     alignItems: 'start',
   },
