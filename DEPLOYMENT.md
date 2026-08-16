@@ -3,7 +3,7 @@
 This release targets a split production deployment:
 
 - Backend: Railway Express service from `backend/`
-- Database: Railway PostgreSQL
+- Database: Supabase PostgreSQL (already provisioned and migrated)
 - Frontend: Vercel React/Vite site from `frontend/`
 
 ## Railway Backend
@@ -17,12 +17,18 @@ backend
 Use these Railway environment variables for the backend service:
 
 ```text
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+DATABASE_URL=postgresql://postgres.<ref>:<NEW-PASSWORD>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
 DATABASE_SSL=true
 JWT_SECRET=<generate-a-long-random-secret>
-CORS_ORIGIN=<your-vercel-frontend-url>
+CORS_ORIGIN=https://<your-project>.vercel.app
 NODE_ENV=production
 ```
+
+Do not set `PORT` — Railway injects it, and `server.js` reads it.
+
+`CORS_ORIGIN` is a comma-separated list. Include every origin the browser will
+actually send, e.g. both the apex Vercel domain and any preview domain you plan
+to demo from. An origin that is not listed gets a 403.
 
 Railway start command:
 
@@ -36,7 +42,9 @@ Health check path:
 /health
 ```
 
-Run database migrations after PostgreSQL is provisioned:
+Migrations are already applied to the Supabase database (all nine tables plus
+the `system_stats` view). They are idempotent, so re-running is safe and is
+only needed if you point at a fresh database:
 
 ```text
 npm run migrate
