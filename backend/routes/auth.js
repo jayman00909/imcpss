@@ -78,10 +78,13 @@ router.post('/register', registerLimiter, async (req, res) => {
     // self-service manager signup is gated behind an invite code when one is
     // configured. Leaving MANAGER_SIGNUP_CODE unset keeps signup open, which
     // is convenient locally but should not be used in production.
-    const managerCode = process.env.MANAGER_SIGNUP_CODE;
+    // Trimmed on both sides: values pasted into a hosting dashboard very
+    // easily pick up a trailing space or newline, which would otherwise make
+    // a visually identical code fail to match.
+    const managerCode = String(process.env.MANAGER_SIGNUP_CODE || '').trim();
 
     if (role === 'manager' && managerCode) {
-      const supplied = String(req.body.manager_code || '');
+      const supplied = String(req.body.manager_code || '').trim();
 
       // Constant-time compare so the code cannot be guessed by timing.
       const expectedBuf = Buffer.from(managerCode);
