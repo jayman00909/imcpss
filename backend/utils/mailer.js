@@ -33,12 +33,21 @@ function isConfigured() {
 
 // Last delivery outcome, surfaced by /health so mail can be diagnosed without
 // shell access to the host. Deliberately holds no addresses or credentials.
-const lastDelivery = { transport: null, ok: null, reason: null, at: null };
+const lastDelivery = { transport: null, ok: null, reason: null, detail: null, at: null };
 
-function record(transport, ok, reason) {
+// Email addresses are stripped so the public health endpoint cannot be used to
+// read back who the system tried to mail.
+function redact(message) {
+  return String(message || '')
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[address]')
+    .slice(0, 160);
+}
+
+function record(transport, ok, reason, detail) {
   lastDelivery.transport = transport;
   lastDelivery.ok = ok;
   lastDelivery.reason = reason || null;
+  lastDelivery.detail = detail ? redact(detail) : null;
   lastDelivery.at = new Date().toISOString();
 }
 
@@ -82,7 +91,7 @@ async function sendViaSmtp({ to, subject, html, text }) {
         : 'smtp_error';
 
     console.error(`SMTP delivery error (${reason}):`, msg);
-    record('smtp', false, reason);
+    record('smtp', false, reason, `${error.code || ''} ${msg}`.trim());
     return { delivered: false, reason };
   }
 }
