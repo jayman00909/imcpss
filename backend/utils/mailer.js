@@ -21,14 +21,25 @@ const nodemailer = require('nodemailer');
  * keeps local development working but delivers nothing.
  */
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
+const brevoConfigured = () => Boolean(process.env.BREVO_API_KEY);
+const resendConfigured = () => Boolean(process.env.RESEND_API_KEY);
 const smtpConfigured = () =>
   Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 
-const resendConfigured = () => Boolean(process.env.RESEND_API_KEY);
-
 function isConfigured() {
-  return smtpConfigured() || resendConfigured();
+  return brevoConfigured() || resendConfigured() || smtpConfigured();
+}
+
+/**
+ * Splits a "Name <address@example.com>" string into its parts.
+ * HTTP providers want the two separately.
+ */
+function parseFrom(value) {
+  const match = String(value || '').match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (match) return { name: match[1] || 'MCO', email: match[2] };
+  return { name: 'MCO', email: String(value || '').trim() };
 }
 
 // Last delivery outcome, surfaced by /health so mail can be diagnosed without
@@ -96,6 +107,43 @@ async function sendViaSmtp({ to, subject, html, text }) {
   }
 }
 
+async function sendViaBrevo({ to, subject, html, text }) {
+  const sender = parseFrom(fromAddress());
+
+  try {
+    const res = await fetch(BREVO_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        sender,
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error(`Brevo delivery failed (${res.status}): ${detail}`);
+      record('brevo', false, `http_${res.status}`, detail);
+      return { delivered: false, reason: 'provider_error' };
+    }
+
+    record('brevo', true);
+    return { delivered: true, via: 'brevo' };
+  } catch (error) {
+    console.error('Brevo delivery error:', error.message);
+    record('brevo', false, 'network_error', error.message);
+    return { delivered: false, reason: 'network_error' };
+  }
+}
+
 async function sendViaResend({ to, subject, html, text }) {
   try {
     const res = await fetch(RESEND_ENDPOINT, {
@@ -123,8 +171,11 @@ async function sendViaResend({ to, subject, html, text }) {
 }
 
 async function sendMail({ to, subject, html, text }) {
-  if (smtpConfigured()) return sendViaSmtp({ to, subject, html, text });
+  // HTTP providers first: many hosts (Render's free tier among them) block
+  // outbound SMTP entirely, so an SMTP transport there can only ever time out.
+  if (brevoConfigured()) return sendViaBrevo({ to, subject, html, text });
   if (resendConfigured()) return sendViaResend({ to, subject, html, text });
+  if (smtpConfigured()) return sendViaSmtp({ to, subject, html, text });
 
   console.log(
     '\n--- EMAIL NOT SENT (no mail transport configured) ---\n' +
@@ -140,7 +191,13 @@ async function sendMail({ to, subject, html, text }) {
 /** Non-sensitive mail status for the health endpoint. */
 function mailStatus() {
   return {
-    transport: smtpConfigured() ? 'smtp' : resendConfigured() ? 'resend' : 'none',
+    transport: brevoConfigured()
+      ? 'brevo'
+      : resendConfigured()
+        ? 'resend'
+        : smtpConfigured()
+          ? 'smtp'
+          : 'none',
     configured: isConfigured(),
     last_delivery: lastDelivery.at ? lastDelivery : null,
   };
