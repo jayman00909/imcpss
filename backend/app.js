@@ -90,13 +90,17 @@ app.get('/', (req, res) => {
   res.json({ message: 'MCO Backend is running!', status: 'OK' });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'backend' });
-});
+// Health includes mail transport status so delivery problems can be diagnosed
+// without host shell access. It reports only which transport is configured and
+// how the last attempt went — never addresses, keys or message contents.
+const { mailStatus } = require('./utils/mailer');
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'backend' });
-});
+const health = (req, res) => {
+  res.json({ status: 'ok', service: 'backend', mail: mailStatus() });
+};
+
+app.get('/health', health);
+app.get('/api/health', health);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);

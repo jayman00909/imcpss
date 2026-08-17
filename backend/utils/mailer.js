@@ -31,6 +31,17 @@ function isConfigured() {
   return smtpConfigured() || resendConfigured();
 }
 
+// Last delivery outcome, surfaced by /health so mail can be diagnosed without
+// shell access to the host. Deliberately holds no addresses or credentials.
+const lastDelivery = { transport: null, ok: null, reason: null, at: null };
+
+function record(transport, ok, reason) {
+  lastDelivery.transport = transport;
+  lastDelivery.ok = ok;
+  lastDelivery.reason = reason || null;
+  lastDelivery.at = new Date().toISOString();
+}
+
 let transporter = null;
 
 function getTransporter() {
@@ -40,6 +51,11 @@ function getTransporter() {
       port: Number(process.env.SMTP_PORT || 465),
       secure: String(process.env.SMTP_PORT || '465') === '465',
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      // Some hosts block outbound SMTP entirely, in which case the socket
+      // hangs rather than refusing. Fail fast instead of waiting forever.
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
   return transporter;
@@ -54,10 +70,20 @@ function fromAddress() {
 async function sendViaSmtp({ to, subject, html, text }) {
   try {
     await getTransporter().sendMail({ from: fromAddress(), to, subject, html, text });
+    record('smtp', true);
     return { delivered: true, via: 'smtp' };
   } catch (error) {
-    console.error('SMTP delivery error:', error.message);
-    return { delivered: false, reason: 'smtp_error' };
+    // Categorise so /health can report the cause without leaking details.
+    const msg = String(error.message || '');
+    const reason = /timeout|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|ECONNRESET/i.test(msg)
+      ? 'unreachable'
+      : /auth|credential|535|534/i.test(msg)
+        ? 'auth_rejected'
+        : 'smtp_error';
+
+    console.error(`SMTP delivery error (${reason}):`, msg);
+    record('smtp', false, reason);
+    return { delivered: false, reason };
   }
 }
 
@@ -74,12 +100,15 @@ async function sendViaResend({ to, subject, html, text }) {
 
     if (!res.ok) {
       console.error(`Resend delivery failed (${res.status}): ${await res.text()}`);
+      record('resend', false, `http_${res.status}`);
       return { delivered: false, reason: 'provider_error' };
     }
 
+    record('resend', true);
     return { delivered: true, via: 'resend' };
   } catch (error) {
     console.error('Resend delivery error:', error.message);
+    record('resend', false, 'network_error');
     return { delivered: false, reason: 'network_error' };
   }
 }
@@ -95,7 +124,17 @@ async function sendMail({ to, subject, html, text }) {
     `${text}\n` +
     '-----------------------------------------------------\n'
   );
+  record('none', false, 'not_configured');
   return { delivered: false, reason: 'not_configured' };
+}
+
+/** Non-sensitive mail status for the health endpoint. */
+function mailStatus() {
+  return {
+    transport: smtpConfigured() ? 'smtp' : resendConfigured() ? 'resend' : 'none',
+    configured: isConfigured(),
+    last_delivery: lastDelivery.at ? lastDelivery : null,
+  };
 }
 
 function passwordResetEmail({ fullName, resetUrl }) {
@@ -132,4 +171,4 @@ function passwordResetEmail({ fullName, resetUrl }) {
   return { subject: 'Reset your MCO password', text, html };
 }
 
-module.exports = { sendMail, passwordResetEmail, isConfigured };
+module.exports = { sendMail, passwordResetEmail, isConfigured, mailStatus };

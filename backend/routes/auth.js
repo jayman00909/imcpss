@@ -282,7 +282,13 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
       resetUrl,
     });
 
-    await sendMail({ to: user.email, subject, html, text });
+    // Deliberately not awaited. Handing off to a mail provider can take many
+    // seconds, or hang outright if the host blocks outbound SMTP, and the
+    // caller must not sit waiting on it. The token is already stored, so
+    // delivery succeeding or failing does not change the reply.
+    sendMail({ to: user.email, subject, html, text }).catch((err) =>
+      console.error('Password reset email failed:', err.message)
+    );
 
     return res.json(genericResponse);
   } catch (error) {
